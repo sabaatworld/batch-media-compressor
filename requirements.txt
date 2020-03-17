@@ -1,0 +1,6 @@
+pylint==2.4.4
+mongoengine==0.18.2
+pyexifinfo==0.4.0
+Wand==0.5.7
+python-dateutil==2.8.1
+PySide2==5.13.2

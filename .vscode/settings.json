@@ -1,0 +1,13 @@
+{
+    "python.pythonPath": "/Volumes/Brazil/VS-Code/pie-indexing-service-py/.venv/bin/python3",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintArgs": [
+        // "--load-plugins=pylint_django"
+    ],
+    "git.ignoreLimitWarning": true,
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": [
+        "--max-line-length=200"
+    ]
+}
