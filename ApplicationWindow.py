@@ -216,6 +216,7 @@ class ApplicationWindow():
         self.indexing_task.settings = self.settings
         indexing_helper = IndexingHelper(self.indexing_task, self.log_queue, self.indexing_stop_event)
         scanned_files = indexing_helper.scan_dirs()
+        indexing_helper.remove_slate_files(scanned_files)
         indexing_helper.lookup_already_indexed_files(scanned_files)
         indexing_helper.create_media_files(scanned_files)
         if (not self.indexing_stop_event.is_set()):

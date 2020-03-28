@@ -34,6 +34,21 @@ class IndexingHelper:
             IndexingHelper.__logger.info("Searched %s/%s: %s (AlreadyIndexed = %s, NeedsReindex= %s)", scanned_file_num, total_scanned_files,
                                          scanned_file.file_path, scanned_file.already_indexed, scanned_file.needs_reindex)
         IndexingHelper.__logger.info("END:: MongoDB lookup for indexed files")
+    
+    def remove_slate_files(self, scanned_files: List[ScannedFile]):
+        IndexingHelper.__logger.info("BEGIN:: Deletion of slate files")
+        media_files: List[MediaFile] = MongoDB.get_all_media_file_ordered()
+        if (not media_files or len(media_files) == 0):
+            IndexingHelper.__logger.info("No media files found in MongoDB")
+        else:
+            for media_file in media_files:
+                if (not any(scanned_file.file_path == media_file.file_path for scanned_file in scanned_files)):
+                    IndexingHelper.__logger.info("Deleting index entry and stale file: %s", media_file.file_path)
+                    output_file = os.path.join(self.__indexing_task.settings.output_dir, media_file.output_rel_file_path)
+                    if (os.path.exists(output_file)):
+                        os.remove(output_file)
+                    MongoDB.delete_document(media_file)
+        IndexingHelper.__logger.info("END:: Deletion of slate files")
 
     def scan_dirs(self):
         IndexingHelper.__logger.info("BEGIN:: Dir scan")

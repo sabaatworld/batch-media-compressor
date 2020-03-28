@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 from pie.domain import MediaFile, Settings
 from pie.util import MiscUtils
-from mongoengine import connect, disconnect, disconnect_all
+from mongoengine import connect, disconnect, disconnect_all, Document
 
 
 class MongoDB:
@@ -44,6 +44,10 @@ class MongoDB:
         if results and len(results) > 0:
             return results[0]
         return None
+    
+    @staticmethod
+    def delete_document(document: Document):
+        document.delete()
 
     @staticmethod
     def get_all_media_file_ordered():

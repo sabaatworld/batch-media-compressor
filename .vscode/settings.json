@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/Volumes/Brazil/VS-Code/pie-indexing-service-py/.venv/bin/python3",
+    "python.pythonPath": "c:\\Users\\sabaa\\Source\\VSCode\\pie-indexing-service-py\\.venv\\Scripts\\python.exe",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "python.linting.pylintArgs": [
