@@ -181,7 +181,6 @@ class ApplicationWindow():
             self.apply_settings()
 
     def apply_settings(self):
-        # MongoDB.save_settings(self.settings)
         self.lwDirsToScan.clear()
         self.lwDirsToScan.addItems(self.settings.dirs_to_include)
         self.lwDirsToExclude.clear()
@@ -214,6 +213,8 @@ class ApplicationWindow():
         MiscUtils.debug_this_thread()
         self.indexing_task = IndexingTask()
         self.indexing_task.settings = self.settings
+        misc_utils = MiscUtils(self.indexing_task)
+        misc_utils.create_root_marker()
         indexing_helper = IndexingHelper(self.indexing_task, self.log_queue, self.indexing_stop_event)
         scanned_files = indexing_helper.scan_dirs()
         indexing_helper.remove_slate_files(scanned_files)
@@ -223,7 +224,6 @@ class ApplicationWindow():
             media_processor = MediaProcessor(self.indexing_task, self.log_queue, self.indexing_stop_event)
             media_processor.save_processed_files()
         if (not self.indexing_stop_event.is_set()):
-            misc_utils = MiscUtils(self.indexing_task)
             misc_utils.cleanEmptyOutputDirs()
 
     def indexing_finished(self):

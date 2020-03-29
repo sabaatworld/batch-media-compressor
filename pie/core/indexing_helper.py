@@ -43,10 +43,11 @@ class IndexingHelper:
         else:
             for media_file in media_files:
                 if (not any(scanned_file.file_path == media_file.file_path for scanned_file in scanned_files)):
-                    IndexingHelper.__logger.info("Deleting index entry and stale file: %s", media_file.file_path)
-                    output_file = os.path.join(self.__indexing_task.settings.output_dir, media_file.output_rel_file_path)
-                    if (os.path.exists(output_file)):
-                        os.remove(output_file)
+                    IndexingHelper.__logger.info("Deleting slate entry %s and its output file %s", media_file.file_path, media_file.output_rel_file_path)
+                    if (media_file.output_rel_file_path):
+                        output_file = os.path.join(self.__indexing_task.settings.output_dir, media_file.output_rel_file_path)
+                        if (os.path.exists(output_file)):
+                            os.remove(output_file)
                     MongoDB.delete_document(media_file)
         IndexingHelper.__logger.info("END:: Deletion of slate files")
 
@@ -85,16 +86,24 @@ class IndexingHelper:
         IndexingHelper.__logger.info("BEGIN:: Media file creation and indexing")
         pool = PyProcessPool(pool_name="IndexingWorker", process_count=self.__indexing_task.settings.indexing_workers, log_queue=self.__log_queue,
                              target=IndexingHelper.indexing_process_exec, initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
-        tasks = list(map(lambda scanned_file: (self.__indexing_task.indexing_time, scanned_file), scanned_files))
+        tasks = list(map(lambda scanned_file: (self.__indexing_task, scanned_file), scanned_files))
         media_files = pool.submit_and_wait(tasks)
         IndexingHelper.__logger.info("END:: Media file creation and indexing")
         return media_files
 
     @staticmethod
-    def indexing_process_exec(indexing_time: datetime, scanned_file: ScannedFile, task_id: str):
+    def indexing_process_exec(indexing_task: IndexingTask, scanned_file: ScannedFile, task_id: str):
         if (not scanned_file.already_indexed or scanned_file.needs_reindex):
             try:
-                media_file = ExifHelper.create_media_file(indexing_time, scanned_file)
+                existing_media_file = None
+                if (scanned_file.needs_reindex):
+                    existing_media_file: MediaFile = MongoDB.get_by_file_path(scanned_file.file_path)
+                    if (existing_media_file and existing_media_file.output_rel_file_path):
+                        existing_output_file = os.path.join(indexing_task.settings.output_dir, existing_media_file.output_rel_file_path)
+                        if (os.path.exists(existing_output_file)):
+                            logging.info("Deleting old output file %s for %s", existing_output_file, existing_media_file.file_path)
+                            os.remove(existing_output_file)
+                media_file = ExifHelper.create_media_file(indexing_task.indexing_time, scanned_file, existing_media_file)
                 if (media_file):
                     MongoDB.insert_media_file(media_file)
                 logging.info("Processed %s: %s", task_id, scanned_file.file_path)

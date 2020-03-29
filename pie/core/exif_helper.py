@@ -14,7 +14,7 @@ class ExifHelper:
     __logger = logging.getLogger('ExifHelper')
 
     @staticmethod
-    def create_media_file(index_time: datetime, scanned_file: ScannedFile) -> MediaFile:
+    def create_media_file(index_time: datetime, scanned_file: ScannedFile, existing_media_file: MediaFile) -> MediaFile:
         file_path = scanned_file.file_path
         exif = ExifHelper.__get_exif_dict(file_path)
         error_str = ExifHelper.__get_exif(exif, "Error")
@@ -26,7 +26,7 @@ class ExifHelper:
         if ("TXT" == exif_file_type_str):
             ExifHelper.__logger.error("Possibly corrupt file. EXIF: %s", exif)
             return None
-        media_file = MediaFile()
+        media_file = existing_media_file if existing_media_file else MediaFile()
         media_file.uuid = str(uuid.uuid4())
         media_file.parent_dir_path = scanned_file.parent_dir_path
         media_file.file_path = file_path

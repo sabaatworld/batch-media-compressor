@@ -67,9 +67,11 @@ class MediaProcessor:
     def conversion_process_exec(indexing_task: IndexingTask, media_file: MediaFile, target_gpu: int, save_file_path_computation_lock: Lock, task_id: str):
         processing_start_time = time.time()
         original_file_path = media_file.file_path
+        save_file_path_copy = "UNKNOWN" # Creating a copy so that it can be used with exception logging below
         try:
             with save_file_path_computation_lock:
                 save_file_path = MediaProcessor.get_save_file_path(media_file, indexing_task.settings.output_dir)
+                save_file_path_copy = save_file_path
                 open(save_file_path, 'a').close()  # Append mode ensures that existing file is not emptied
             if (not indexing_task.settings.overwrite_output_files and os.path.exists(save_file_path) and os.path.getsize(save_file_path) > 0):
                 logging.info("Skipped %s: %s -> %s", task_id, original_file_path, save_file_path)
@@ -82,7 +84,7 @@ class MediaProcessor:
                 logging.info("Converted %s: %s -> %s (%s%%) (%ss)", task_id, original_file_path, save_file_path,
                              round(os.path.getsize(save_file_path) / media_file.original_size * 100, 2), round(time.time() - processing_start_time, 2))
         except:
-            logging.exception("Failed %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path if save_file_path else "UNKNOWN", round(time.time() - processing_start_time, 2))
+            logging.exception("Failed %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path_copy, round(time.time() - processing_start_time, 2))
 
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):

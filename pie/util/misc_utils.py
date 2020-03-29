@@ -102,3 +102,10 @@ class MiscUtils:
         MiscUtils.__logger.info("BEGIN:: Deletion of empty output dirs")
         MiscUtils.cleanEmptyDirs(self.__indexing_task.settings.output_dir, False)
         MiscUtils.__logger.info("END:: Deletion of empty output dirs")
+
+    def create_root_marker(self):
+        os.makedirs(self.__indexing_task.settings.output_dir, exist_ok = True)
+        marker_file = os.path.join(self.__indexing_task.settings.output_dir, "pie_root")
+        with open(marker_file, 'w') as file:
+            file.write("Just a marker file. Nothing interesting here.") 
+            pass
