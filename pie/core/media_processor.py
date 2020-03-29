@@ -168,6 +168,7 @@ class MediaProcessor:
         files = sorted(os.listdir(save_dir_path), reverse=True)
         if (files and len(files) > 0):
             file = files[0]
+            # TODO this will not work when path contains symbols like '.' , '_'.
             next = int(file.split(".")[0]) + 1
         else:
             next = 1
@@ -183,6 +184,7 @@ class MediaProcessor:
             files = sorted(filter(lambda k: k.startswith(time_prefix), os.listdir(save_dir_path)), reverse=True)
             # We know that there is atleast 1 file; but we would have applied the counter only if there were 2 or more
             if (len(files) > 1):
+                # TODO this will not work when path contains symbols like '.' , '_'. May also fail due to parallel processing. Best to use DB and find out a good filename.
                 next = int(files[0].split(".")[0].split("_")[1]) + 1
             else:
                 next = 1
