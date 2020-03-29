@@ -1,6 +1,5 @@
 pylint==2.4.4
 mongoengine==0.19.1
 pyexifinfo==0.4.0
-Wand==0.5.9
 python-dateutil==2.8.1
 PySide2==5.14.1

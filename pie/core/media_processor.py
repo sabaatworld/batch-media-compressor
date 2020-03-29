@@ -8,8 +8,6 @@ from pie.util import PyProcessPool
 from .mongo_db import MongoDB
 from typing import List
 from datetime import datetime
-from wand.image import Image
-from wand.exceptions import BaseError
 from multiprocessing import Queue, Event, Lock, Manager
 
 
@@ -88,15 +86,13 @@ class MediaProcessor:
 
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):
-        with Image(filename=original_file_path) as orig_img:
-            orig_img: Image = orig_img
-            with orig_img.convert('jpeg') as new_img:
-                new_img: Image = new_img
-                new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
-                if (new_dimentions):
-                    new_img.sample(new_dimentions['width'], new_dimentions['height'])
-                new_img.compression_quality = settings.image_compression_quality
-                new_img.save(filename=save_file_path)
+        new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
+        new_dimention_arg = "{}x{}".format(new_dimentions['height'], new_dimentions['width'])
+        quality_arg = str(settings.image_compression_quality)
+        args = ["magick", "convert", "-resize", new_dimention_arg, "-quality", quality_arg, original_file_path, save_file_path]
+        results = subprocess.run(args, capture_output=True)
+        if (results.returncode != 0):
+            raise RuntimeError('Image conversion failed: ' + str(results.stderr))
 
     @staticmethod
     def convert_video_file(settings: Settings, media_file: MediaFile, original_file_path: str, new_file_path: str, target_gpu: int):
