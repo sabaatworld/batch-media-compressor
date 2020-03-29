@@ -82,14 +82,18 @@ class MediaProcessor:
                 logging.info("Converted %s: %s -> %s (%s%%) (%ss)", task_id, original_file_path, save_file_path,
                              round(os.path.getsize(save_file_path) / media_file.original_size * 100, 2), round(time.time() - processing_start_time, 2))
         except:
-            logging.exception("Failed %s: %s (%ss)", task_id, original_file_path, round(time.time() - processing_start_time, 2))
+            logging.exception("Failed %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path if save_file_path else "UNKNOWN", round(time.time() - processing_start_time, 2))
 
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):
+        # Sample: magick convert -resize 320x480 -quality 75 inputFile.cr2 outputfile.jpg
+        args = ["magick", "convert", "-quality", str(settings.image_compression_quality), original_file_path, save_file_path]
+        
         new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
-        new_dimention_arg = "{}x{}".format(new_dimentions['height'], new_dimentions['width'])
-        quality_arg = str(settings.image_compression_quality)
-        args = ["magick", "convert", "-resize", new_dimention_arg, "-quality", quality_arg, original_file_path, save_file_path]
+        if (new_dimentions):
+            args.insert(2, "-resize")
+            args.insert(3, "{}x{}".format(new_dimentions['height'], new_dimentions['width']))
+        
         results = subprocess.run(args, capture_output=True)
         if (results.returncode != 0):
             raise RuntimeError('Image conversion failed: ' + str(results.stderr))

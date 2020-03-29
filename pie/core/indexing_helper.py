@@ -93,11 +93,14 @@ class IndexingHelper:
     @staticmethod
     def indexing_process_exec(indexing_time: datetime, scanned_file: ScannedFile, task_id: str):
         if (not scanned_file.already_indexed or scanned_file.needs_reindex):
-            logging.info("Processing %s: %s", task_id, scanned_file.file_path)
-            media_file = ExifHelper.create_media_file(indexing_time, scanned_file)
-            if (media_file):
-                MongoDB.insert_media_file(media_file)
-                return media_file
+            try:
+                media_file = ExifHelper.create_media_file(indexing_time, scanned_file)
+                if (media_file):
+                    MongoDB.insert_media_file(media_file)
+                logging.info("Processed %s: %s", task_id, scanned_file.file_path)
+                return media_file # PyProcessPool will take care of filtering None values
+            except:
+                logging.exception("Failed %s: %s", task_id, scanned_file.file_path)
         else:
             logging.info("Skipping %s: %s", task_id, scanned_file.file_path)
 

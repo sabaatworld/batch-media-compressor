@@ -74,12 +74,14 @@ class ExifHelper:
         # Candidates: "GPSDateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "CreationDate"
         date_str = ExifHelper.__get_exif(exif, "GPSDateTime", "DateTimeOriginal", "CreateDate")
         if (date_str and not re.search(": +:|0000:00:00 00:00:00", date_str)):
-            # Possible formats are yyyy:MM:dd HH:mm / yyyy.MM.dd HH:mm:ss / iPhoneImage: yyyy.MM.dd HH:mm:ss.FFF
+            # Possible formats are yyyy:MM:dd HH:mm / yyyy.MM.dd HH:mm:ss / iPhoneImage: yyyy.MM.dd HH:mm:ss.FFF / iPhone 5: yyyy.MM.dd HH:mm:ss.XXZ
             # iPhoneVideo: yyyy.MM.dd HH:mm:sszzz, etc. To work with the automatic parser, we modify the date part a bit.
-            # TODO Consider 7/11/2016 for timezone. Consider GPS for timezone.
             date_str_parts = date_str.split(" ")
             if (len(date_str_parts) > 1):
                 date_str_parts[0] = date_str_parts[0].replace(':', ".")
+                if (re.match(r"^.+\.\d{1,2}Z$", date_str_parts[1])):  # Removing XX from yyyy.MM.dd HH:mm:ss.XXZ
+                    time_str_parts = re.split(r"\.", date_str_parts[1])
+                    date_str_parts[1] = time_str_parts[0] + "Z"
             date_str = " ".join(date_str_parts)
             capture_datetime = parse(date_str)
             return capture_datetime.astimezone(UTC)
