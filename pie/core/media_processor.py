@@ -93,10 +93,7 @@ class MediaProcessor:
         if (new_dimentions):
             args.insert(2, "-resize")
             args.insert(3, "{}x{}".format(new_dimentions['height'], new_dimentions['width']))
-        
-        results = subprocess.run(args, capture_output=True)
-        if (results.returncode != 0):
-            raise RuntimeError('Image conversion failed: ' + str(results.stderr))
+        MediaProcessor.exec_subprocess(args, "Image conversion failed")
 
     @staticmethod
     def convert_video_file(settings: Settings, media_file: MediaFile, original_file_path: str, new_file_path: str, target_gpu: int):
@@ -118,10 +115,7 @@ class MediaProcessor:
             if (new_dimentions):
                 args.insert(18, "-vf")
                 args.insert(19, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
-
-        results = subprocess.run(args, capture_output=True)
-        if (results.returncode != 0):
-            raise RuntimeError('Video conversion failed: ' + str(results.stderr))
+        MediaProcessor.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod
     def copy_exif_to_file(original_file_path: str, new_file_path: str, rotation: str):
@@ -129,9 +123,13 @@ class MediaProcessor:
         args = ["exiftool", "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
         if (rotation):
             args.insert(4, "-rotation={}".format(rotation))
-        results = subprocess.run(args, capture_output=True)
+        MediaProcessor.exec_subprocess(args, "EXIF copy failed")
+
+    @staticmethod
+    def exec_subprocess(popenargs: List[str], errorMsg: str):
+        results = subprocess.run(popenargs, capture_output=True)
         if (results.returncode != 0):
-            raise RuntimeError('EXIF copy failed: ' + str(results.stderr))
+            raise RuntimeError("{}: CommandLine: {}, Output: {}".format(errorMsg, subprocess.list2cmdline(popenargs), str(results.stderr)))
 
     @staticmethod
     def get_new_dimentions(original_height: int, original_width: int, max_dimention: int):

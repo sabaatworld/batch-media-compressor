@@ -222,6 +222,9 @@ class ApplicationWindow():
         if (not self.indexing_stop_event.is_set()):
             media_processor = MediaProcessor(self.indexing_task, self.log_queue, self.indexing_stop_event)
             media_processor.save_processed_files()
+        if (not self.indexing_stop_event.is_set()):
+            misc_utils = MiscUtils(self.indexing_task)
+            misc_utils.cleanEmptyOutputDirs()
 
     def indexing_finished(self):
         self.btnStartIndex.setEnabled(True)

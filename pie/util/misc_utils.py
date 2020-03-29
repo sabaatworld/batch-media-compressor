@@ -3,12 +3,18 @@ import os
 import sys
 import shutil
 import multiprocessing
+from pie.domain import IndexingTask
 from logging.handlers import TimedRotatingFileHandler, QueueHandler
 from multiprocessing import Queue
 
 
 class MiscUtils:
     __APP_LOG_FILE_NAME = "application.log"
+
+    __logger = logging.getLogger('MiscUtils')
+
+    def __init__(self, indexing_task: IndexingTask):
+        self.__indexing_task = indexing_task
 
     @staticmethod
     def configure_logging(log_file_dir: str):
@@ -71,3 +77,28 @@ class MiscUtils:
             return multiprocessing.cpu_count()
         except:
             return 1
+
+    @staticmethod
+    def cleanEmptyDirs(path, removeRoot = True):
+        'Function to remove empty folders recursively'
+        if not os.path.isdir(path):
+            return
+
+        # remove empty subfolders
+        files = os.listdir(path)
+        if len(files):
+            for f in files:
+                fullpath = os.path.join(path, f)
+                if os.path.isdir(fullpath):
+                    MiscUtils.cleanEmptyDirs(fullpath)
+
+        # if folder empty, delete it
+        files = os.listdir(path)
+        if len(files) == 0 and removeRoot:
+            MiscUtils.__logger.info("Removing empty directory: %s", path)
+            os.rmdir(path)
+
+    def cleanEmptyOutputDirs(self):
+        MiscUtils.__logger.info("BEGIN:: Deletion of empty output dirs")
+        MiscUtils.cleanEmptyDirs(self.__indexing_task.settings.output_dir, False)
+        MiscUtils.__logger.info("END:: Deletion of empty output dirs")

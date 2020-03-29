@@ -7,7 +7,7 @@ from mongoengine import Document, EmbeddedDocument, StringField, ListField, Refe
 
 class ScannedFileType(Enum):
     __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIFF", "PNG", "BMP", "CR2", "DNG"]
-    __VIDEO_EXTENSIONS__ = ["MOV", "MP4", "M4V", "3G2", "3GP", "AVI"]
+    __VIDEO_EXTENSIONS__ = ["MOV", "MP4", "M4V", "3G2", "3GP", "AVI", "MTS", "MPG", "MPEG"]
 
     IMAGE = 1
     VIDEO = 2
