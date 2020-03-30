@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>660</width>
-    <height>660</height>
+    <width>990</width>
+    <height>490</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,9 +20,9 @@
    <widget class="QWidget" name="horizontalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>520</y>
-      <width>621</width>
+      <x>10</x>
+      <y>450</y>
+      <width>641</width>
       <height>41</height>
      </rect>
     </property>
@@ -78,42 +78,13 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="verticalLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>570</y>
-      <width>621</width>
-      <height>80</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QLabel" name="lblTaskStatus">
-       <property name="text">
-        <string>No tasks running</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QProgressBar" name="pbTaskProgress">
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="textVisible">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>10</y>
       <width>640</width>
-      <height>261</height>
+      <height>391</height>
      </rect>
     </property>
     <property name="title">
@@ -128,158 +99,250 @@
     <property name="checkable">
      <bool>false</bool>
     </property>
-    <widget class="QLabel" name="Dirs_2">
-     <property name="geometry">
-      <rect>
-       <x>330</x>
-       <y>10</y>
-       <width>291</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Directories to Exclude</string>
-     </property>
-    </widget>
-    <widget class="QListWidget" name="lwDirsToExclude">
-     <property name="geometry">
-      <rect>
-       <x>330</x>
-       <y>30</y>
-       <width>300</width>
-       <height>150</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnAddDirToExclude">
-     <property name="geometry">
-      <rect>
-       <x>330</x>
-       <y>190</y>
-       <width>110</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Add</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnDelDirToScan">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>140</x>
-       <y>190</y>
-       <width>110</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Remove</string>
-     </property>
-    </widget>
-    <widget class="QListWidget" name="lwDirsToScan">
+    <widget class="QGroupBox" name="groupBox_4">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
-       <width>300</width>
-       <height>150</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QLabel" name="Dirs">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>291</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Directories to Scan</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnAddDirToScan">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>190</y>
-       <width>110</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Add</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnDelDirToExclude">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>460</x>
-       <y>190</y>
-       <width>110</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Remove</string>
-     </property>
-    </widget>
-    <widget class="QWidget" name="horizontalLayoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>220</y>
+       <y>70</y>
        <width>621</width>
-       <height>41</height>
+       <height>171</height>
       </rect>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Output Directory</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="txtOutputDir">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnPickOutputDir">
-        <property name="text">
-         <string>Pick Directory</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="chkOverwriteFiles">
-        <property name="text">
-         <string>Overwrite Files</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="title">
+      <string/>
+     </property>
+     <widget class="QListWidget" name="lwDirsToExclude">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>601</width>
+        <height>101</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="Dirs_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>291</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Directories to Exclude</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnDelDirToExclude">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>140</y>
+        <width>110</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Remove</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnAddDirToExclude">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>140</y>
+        <width>110</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Add</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>250</y>
+       <width>621</width>
+       <height>131</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+     <widget class="QLabel" name="Dirs_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>291</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Output Directories</string>
+      </property>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>601</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Media with Capture Date</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="txtOutputDir">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnPickOutputDir">
+         <property name="text">
+          <string>Pick Directory</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_4">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>601</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <widget class="QLabel" name="label_8">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Media without Capture Date</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="txtUnknownOutputDir">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnPickUnknownOutputDir">
+         <property name="text">
+          <string>Pick Directory</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_6">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>621</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+     <widget class="QWidget" name="horizontalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>601</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QLabel" name="label_9">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Directory to Scan</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="txtMonitoredDir">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnPickMonitoredDir">
+         <property name="text">
+          <string>Pick Directory</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>280</y>
+      <x>660</x>
+      <y>10</y>
       <width>320</width>
-      <height>231</height>
+      <height>230</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -499,6 +562,11 @@
        <height>16</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Output Preferences</string>
      </property>
@@ -507,10 +575,10 @@
    <widget class="QGroupBox" name="groupBox_3">
     <property name="geometry">
      <rect>
-      <x>330</x>
-      <y>280</y>
+      <x>660</x>
+      <y>250</y>
       <width>320</width>
-      <height>231</height>
+      <height>230</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -638,10 +706,41 @@
        <height>16</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Indexing Preferences</string>
      </property>
     </widget>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>410</y>
+      <width>641</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <widget class="QCheckBox" name="chkConvertUnknown">
+       <property name="text">
+        <string>Convert Media without Capture Date</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="chkOverwriteFiles">
+       <property name="text">
+        <string>Overwrite Files in Output Directories</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
  </widget>

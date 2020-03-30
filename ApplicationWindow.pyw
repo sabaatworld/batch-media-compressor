@@ -3,7 +3,7 @@ import random
 import logging
 import multiprocessing
 import threading
-from pie.core import IndexingHelper, ExifHelper, MediaProcessor, MongoDB
+from pie.core import IndexingHelper, ExifHelper, MediaProcessor, MongoDB, RestServer
 from pie.util import MiscUtils, QWorker
 from pie.domain import IndexingTask, Settings
 from PySide2 import QtCore, QtWidgets, QtGui, QtUiTools
@@ -35,20 +35,22 @@ class ApplicationWindow():
 
         self.window.setFixedSize(self.window.size())
 
-        self.lwDirsToScan: QtWidgets.QListWidget = self.window.findChild(QtWidgets.QListWidget, 'lwDirsToScan')
-        self.btnAddDirToScan: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnAddDirToScan')
-        self.btnDelDirToScan: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnDelDirToScan')
+        self.txtMonitoredDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtMonitoredDir')
+        self.btnPickMonitoredDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickMonitoredDir')
         self.lwDirsToExclude: QtWidgets.QListWidget = self.window.findChild(QtWidgets.QListWidget, 'lwDirsToExclude')
         self.btnAddDirToExclude: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnAddDirToExclude')
         self.btnDelDirToExclude: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnDelDirToExclude')
         self.txtOutputDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtOutputDir')
         self.btnPickOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickOutputDir')
+        self.txtUnknownOutputDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtUnknownOutputDir')
+        self.btnPickUnknownOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickUnknownOutputDir')
         self.btnStartIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStartIndex')
         self.btnStop: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStop')
         self.btnClearIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnClearIndex')
         self.btnRestoreDefaults: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnRestoreDefaults')
         self.lblTaskStatus: QtWidgets.QLabel = self.window.findChild(QtWidgets.QLabel, 'lblTaskStatus')
         self.pbTaskProgress: QtWidgets.QProgressBar = self.window.findChild(QtWidgets.QProgressBar, 'pbTaskProgress')
+        self.chkConvertUnknown: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkConvertUnknown')
         self.chkOverwriteFiles: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkOverwriteFiles')
         self.spinImageQuality: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageQuality')
         self.spinImageMaxDimension: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageMaxDimension')
@@ -61,13 +63,13 @@ class ApplicationWindow():
         self.spinGpuWorkers: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinGpuWorkers')
         self.spinGpuCount: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinGpuCount')
 
-        self.lwDirsToScan.itemSelectionChanged.connect(self.lwDirsToScan_itemSelectionChanged)
-        self.btnAddDirToScan.clicked.connect(self.btnAddDirToScan_click)
-        self.btnDelDirToScan.clicked.connect(self.btnDelDirToScan_click)
+        self.btnPickMonitoredDir.clicked.connect(self.btnPickMonitoredDir_click)
         self.lwDirsToExclude.itemSelectionChanged.connect(self.lwDirsToExclude_itemSelectionChanged)
         self.btnAddDirToExclude.clicked.connect(self.btnAddDirToExclude_click)
         self.btnDelDirToExclude.clicked.connect(self.btnDelDirToExclude_click)
         self.btnPickOutputDir.clicked.connect(self.btnPickOutputDir_click)
+        self.btnPickUnknownOutputDir.clicked.connect(self.btnPickUnknownOutputDir_click)
+        self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
 
         self.btnStartIndex.clicked.connect(self.btnStartIndex_click)
@@ -95,27 +97,18 @@ class ApplicationWindow():
         MongoDB.save_settings(self.settings)
         self.apply_settings()
 
+        self.restServer = RestServer(self.settings, self.log_queue) # TODO move this somewhere else so that it picks up the latest settings
+        self.restServer.startServer()
+
     def show(self):
         self.window.show()
 
-    def lwDirsToScan_itemSelectionChanged(self):
-        selected_items = self.lwDirsToScan.selectedItems()
-        self.btnDelDirToScan.setEnabled(len(selected_items) > 0)
-
-    def btnAddDirToScan_click(self):
-        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick a directory to include")
-        if (selected_directory and not selected_directory in self.settings.dirs_to_include):
-            self.settings.dirs_to_include.append(selected_directory)
-            self.lwDirsToScan.addItem(selected_directory)
+    def btnPickMonitoredDir_click(self):
+        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor")
+        if (selected_directory):
+            self.settings.monitored_dir = selected_directory
             MongoDB.save_settings(self.settings)
-
-    def btnDelDirToScan_click(self):
-        selected_items = self.lwDirsToScan.selectedItems()
-        for selected_item in selected_items:
-            selected_item: QtWidgets.QListWidgetItem = selected_item
-            self.settings.dirs_to_include.remove(selected_item.text())
-            self.lwDirsToScan.takeItem(self.lwDirsToScan.row(selected_item))
-        MongoDB.save_settings(self.settings)
+            self.txtMonitoredDir.setText(self.settings.monitored_dir)
 
     def lwDirsToExclude_itemSelectionChanged(self):
         selected_items = self.lwDirsToExclude.selectedItems()
@@ -143,6 +136,13 @@ class ApplicationWindow():
             MongoDB.save_settings(self.settings)
             self.txtOutputDir.setText(self.settings.output_dir)
 
+    def btnPickUnknownOutputDir_click(self):
+        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory")
+        if (selected_directory):
+            self.settings.unknown_output_dir = selected_directory
+            MongoDB.save_settings(self.settings)
+            self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
+
     def btnStartIndex_click(self):
         self.btnStartIndex.setEnabled(False)
         self.btnClearIndex.setEnabled(False)
@@ -169,7 +169,8 @@ class ApplicationWindow():
         if (QtWidgets.QMessageBox.Yes == response):
             MongoDB.clear_indexed_files()
             MiscUtils.recursively_delete_children(self.settings.output_dir)
-            self.__logger.info("Output directory cleared")
+            MiscUtils.recursively_delete_children(self.settings.unknown_output_dir)
+            self.__logger.info("Output directories cleared")
 
     def btnRestoreDefaults_click(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
@@ -181,11 +182,12 @@ class ApplicationWindow():
             self.apply_settings()
 
     def apply_settings(self):
-        self.lwDirsToScan.clear()
-        self.lwDirsToScan.addItems(self.settings.dirs_to_include)
+        self.txtMonitoredDir.setText(self.settings.monitored_dir)
         self.lwDirsToExclude.clear()
         self.lwDirsToExclude.addItems(self.settings.dirs_to_exclude)
+        self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
         self.txtOutputDir.setText(self.settings.output_dir)
+        self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
         self.chkOverwriteFiles.setChecked(self.settings.overwrite_output_files)
         self.spinImageQuality.setValue(self.settings.image_compression_quality)
         self.spinImageMaxDimension.setValue(self.settings.image_max_dimension)
@@ -205,6 +207,7 @@ class ApplicationWindow():
     def cleanup(self):
         ApplicationWindow.__logger.info("Performing cleanup")
         self.stop_async_tasks()
+        self.restServer.stopServer()
         MongoDB.disconnect_db()
         self.log_queue.put(None)
         self.logger_thread.join()
@@ -235,6 +238,10 @@ class ApplicationWindow():
 
     def indexing_progress(self, progress):
         print("%d%% done" % progress)
+
+    def chkConvertUnknown_stateChanged(self):
+        self.settings.convert_unknown = self.chkConvertUnknown.isChecked()
+        MongoDB.save_settings(self.settings)
 
     def chkOverwriteFiles_stateChanged(self):
         self.settings.overwrite_output_files = self.chkOverwriteFiles.isChecked()

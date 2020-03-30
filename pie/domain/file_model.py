@@ -94,10 +94,12 @@ class MediaFile(Document):
 
 
 class Settings(Document):
-    dirs_to_include: list = ListField()
+    monitored_dir: str = StringField()
     dirs_to_exclude: list = ListField()
     output_dir: str = StringField()
+    unknown_output_dir: str = StringField()
     log_file_dir: str = StringField()
+    convert_unknown: bool = BooleanField()
     overwrite_output_files: bool = BooleanField()
     indexing_workers: int = LongField()
     conversion_workers: int = LongField()

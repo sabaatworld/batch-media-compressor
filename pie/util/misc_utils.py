@@ -79,7 +79,7 @@ class MiscUtils:
             return 1
 
     @staticmethod
-    def cleanEmptyDirs(path, removeRoot = True):
+    def cleanEmptyDirs(path, removeRoot=True):
         'Function to remove empty folders recursively'
         if not os.path.isdir(path):
             return
@@ -101,11 +101,14 @@ class MiscUtils:
     def cleanEmptyOutputDirs(self):
         MiscUtils.__logger.info("BEGIN:: Deletion of empty output dirs")
         MiscUtils.cleanEmptyDirs(self.__indexing_task.settings.output_dir, False)
+        MiscUtils.cleanEmptyDirs(self.__indexing_task.settings.unknown_output_dir, False)
         MiscUtils.__logger.info("END:: Deletion of empty output dirs")
 
     def create_root_marker(self):
-        os.makedirs(self.__indexing_task.settings.output_dir, exist_ok = True)
-        marker_file = os.path.join(self.__indexing_task.settings.output_dir, "pie_root")
-        with open(marker_file, 'w') as file:
-            file.write("Just a marker file. Nothing interesting here.") 
-            pass
+        os.makedirs(self.__indexing_task.settings.output_dir, exist_ok=True)
+        os.makedirs(self.__indexing_task.settings.unknown_output_dir, exist_ok=True)
+        marker_file_name = ".pie_root"
+        with open(os.path.join(self.__indexing_task.settings.output_dir, marker_file_name), 'w') as file:
+            file.write("Just a marker file. Nothing interesting here.")
+        with open(os.path.join(self.__indexing_task.settings.unknown_output_dir, marker_file_name), 'w') as file:
+            file.write("Just a marker file. Nothing interesting here.")

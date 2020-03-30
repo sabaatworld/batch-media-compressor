@@ -7,7 +7,7 @@ from mongoengine import connect, disconnect, disconnect_all, Document
 
 class MongoDB:
     __logger = logging.getLogger('MongoDB')
-    __DB_NAME = "pie"
+    __DB_NAME = "pie2"
 
     @staticmethod
     def connect_db():
@@ -44,6 +44,13 @@ class MongoDB:
         if results and len(results) > 0:
             return results[0]
         return None
+
+    @staticmethod
+    def get_by_output_rel_path(output_rel_path_to_query: str):
+        results = MediaFile.objects(output_rel_file_path = output_rel_path_to_query)
+        if results and len(results) > 0:
+            return results[0]
+        return None
     
     @staticmethod
     def delete_document(document: Document):
@@ -64,14 +71,14 @@ class MongoDB:
             settings = Settings()
 
         # Apply defaults if they are not already set
-        if (not settings.dirs_to_include):
-            settings.dirs_to_include = []
-            save_record = True
         if (not settings.dirs_to_exclude):
             settings.dirs_to_exclude = []
             save_record = True
         if (not settings.log_file_dir):
             settings.log_file_dir = "logs"
+            save_record = True
+        if (not settings.convert_unknown):
+            settings.convert_unknown = False
             save_record = True
         if (not settings.overwrite_output_files):
             settings.overwrite_output_files = False
