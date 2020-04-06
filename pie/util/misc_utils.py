@@ -51,8 +51,9 @@ class MiscUtils:
     @staticmethod
     def recursively_delete_children(dir: str):
         if (dir and os.path.exists(dir)):
-            child_dirs = next(x[1] for x in os.walk(dir))
-            for child_dir in child_dirs:
+            for file in next(x[2] for x in os.walk(dir)):
+                os.remove(os.path.join(dir, file))
+            for child_dir in next(x[1] for x in os.walk(dir)):
                 shutil.rmtree(os.path.join(dir, child_dir))
 
     @staticmethod

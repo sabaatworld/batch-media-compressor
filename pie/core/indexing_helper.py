@@ -11,6 +11,7 @@ from datetime import datetime
 from pie.util import MiscUtils, PyProcess, PyProcessPool
 from multiprocessing import Process, Value, Queue, JoinableQueue, Event
 from logging import Logger
+from pathlib import Path
 
 
 class IndexingHelper:
@@ -114,4 +115,6 @@ class IndexingHelper:
 
     def exclude_dir_from_scan(self, dir_path: str):
         for dir_to_exclude in self.__indexing_task.settings.dirs_to_exclude:
-            return dir_path.startswith(dir_to_exclude)
+            path_to_exclude = Path(dir_to_exclude)
+            path_to_check = Path(dir_path)
+            return path_to_exclude == path_to_check or path_to_exclude in path_to_check.parents

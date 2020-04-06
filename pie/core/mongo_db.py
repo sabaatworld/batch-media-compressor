@@ -80,6 +80,12 @@ class MongoDB:
         if (not settings.convert_unknown):
             settings.convert_unknown = False
             save_record = True
+        if (not settings.output_dir_path_type):
+            settings.output_dir_path_type = "Use Original Paths"
+            save_record = True
+        if (not settings.unknown_output_dir_path_type):
+            settings.unknown_output_dir_path_type = "Use Original Paths"
+            save_record = True
         if (not settings.overwrite_output_files):
             settings.overwrite_output_files = False
             save_record = True

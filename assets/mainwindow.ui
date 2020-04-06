@@ -236,6 +236,20 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QComboBox" name="cbOutputDirPathType">
+         <item>
+          <property name="text">
+           <string>Use Original Paths</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Sort by Date</string>
+          </property>
+         </item>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="horizontalLayoutWidget_4">
@@ -273,6 +287,15 @@
          <property name="text">
           <string>Pick Directory</string>
          </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cbUnknownOutputDirPathType">
+         <item>
+          <property name="text">
+           <string>Use Original Paths</string>
+          </property>
+         </item>
         </widget>
        </item>
       </layout>

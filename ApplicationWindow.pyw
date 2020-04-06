@@ -40,10 +40,14 @@ class ApplicationWindow():
         self.lwDirsToExclude: QtWidgets.QListWidget = self.window.findChild(QtWidgets.QListWidget, 'lwDirsToExclude')
         self.btnAddDirToExclude: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnAddDirToExclude')
         self.btnDelDirToExclude: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnDelDirToExclude')
+
         self.txtOutputDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtOutputDir')
         self.btnPickOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickOutputDir')
         self.txtUnknownOutputDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtUnknownOutputDir')
         self.btnPickUnknownOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickUnknownOutputDir')
+        self.cbOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbOutputDirPathType')
+        self.cbUnknownOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbUnknownOutputDirPathType')
+
         self.btnStartIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStartIndex')
         self.btnStop: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStop')
         self.btnClearIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnClearIndex')
@@ -69,6 +73,8 @@ class ApplicationWindow():
         self.btnDelDirToExclude.clicked.connect(self.btnDelDirToExclude_click)
         self.btnPickOutputDir.clicked.connect(self.btnPickOutputDir_click)
         self.btnPickUnknownOutputDir.clicked.connect(self.btnPickUnknownOutputDir_click)
+        self.cbOutputDirPathType.currentTextChanged.connect(self.cbOutputDirPathType_currentTextChanged)
+        self.cbUnknownOutputDirPathType.currentTextChanged.connect(self.cbUnknownOutputDirPathType_currentTextChanged)
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
 
@@ -97,7 +103,7 @@ class ApplicationWindow():
         MongoDB.save_settings(self.settings)
         self.apply_settings()
 
-        self.restServer = RestServer(self.settings, self.log_queue) # TODO move this somewhere else so that it picks up the latest settings
+        self.restServer = RestServer(self.settings, self.log_queue)  # TODO move this somewhere else so that it picks up the latest settings
         self.restServer.startServer()
 
     def show(self):
@@ -187,6 +193,8 @@ class ApplicationWindow():
         self.lwDirsToExclude.addItems(self.settings.dirs_to_exclude)
         self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
         self.txtOutputDir.setText(self.settings.output_dir)
+        self.cbOutputDirPathType.setCurrentIndex(self.cbOutputDirPathType.findText(self.settings.output_dir_path_type))
+        self.cbUnknownOutputDirPathType.setCurrentIndex(self.cbUnknownOutputDirPathType.findText(self.settings.unknown_output_dir_path_type))
         self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
         self.chkOverwriteFiles.setChecked(self.settings.overwrite_output_files)
         self.spinImageQuality.setValue(self.settings.image_compression_quality)
@@ -238,6 +246,14 @@ class ApplicationWindow():
 
     def indexing_progress(self, progress):
         print("%d%% done" % progress)
+
+    def cbOutputDirPathType_currentTextChanged(self, new_text: str):
+        self.settings.output_dir_path_type = new_text
+        MongoDB.save_settings(self.settings)
+
+    def cbUnknownOutputDirPathType_currentTextChanged(self, new_text: str):
+        self.settings.unknown_output_dir_path_type = new_text
+        MongoDB.save_settings(self.settings)
 
     def chkConvertUnknown_stateChanged(self):
         self.settings.convert_unknown = self.chkConvertUnknown.isChecked()

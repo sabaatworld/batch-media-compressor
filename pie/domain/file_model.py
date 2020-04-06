@@ -98,6 +98,8 @@ class Settings(Document):
     dirs_to_exclude: list = ListField()
     output_dir: str = StringField()
     unknown_output_dir: str = StringField()
+    output_dir_path_type: str = StringField()
+    unknown_output_dir_path_type: str = StringField()
     log_file_dir: str = StringField()
     convert_unknown: bool = BooleanField()
     overwrite_output_files: bool = BooleanField()

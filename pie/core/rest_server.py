@@ -7,9 +7,9 @@ from multiprocessing import Queue, Event, JoinableQueue, Process
 from flask import Flask, escape, request
 from send2trash import send2trash
 
+
 class RestServer:
     __logger = logging.getLogger('RestServer')
-   
 
     def __init__(self, settings: Settings, log_queue: Queue):
         self.__settings = settings
@@ -26,7 +26,7 @@ class RestServer:
             name = request.args.get("name", "World")
             return f'Hello, {escape(name)}!'
 
-        @app.route('/delete-originals', methods = ['POST'])
+        @app.route('/delete-originals', methods=['POST'])
         def handleDeleteOriginal():
             output_rel_path = request.form['output_rel_path']
             logging.info("Received request to delete original for: %s", output_rel_path)
@@ -39,10 +39,10 @@ class RestServer:
                         return 'true'
             return 'false'
 
-        app.run(host='0.0.0.0', port=9898)
+        # app.run(host='0.0.0.0', port=9898) Uncomment to run
 
     def startServer(self):
-        self.__process = Process(target = RestServer.execStartServer, args = [self.__settings, self.__log_queue], name = "Flask")
+        self.__process = Process(target=RestServer.execStartServer, args=[self.__settings, self.__log_queue], name="Flask")
         self.__process.start()
 
     def stopServer(self):

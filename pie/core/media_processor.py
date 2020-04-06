@@ -176,11 +176,20 @@ class MediaProcessor:
     @staticmethod
     def get_save_dir_path(media_file: MediaFile, settings: Settings):
         if media_file.capture_date:
-            date_path = os.path.join(str(media_file.capture_date.year), str(media_file.capture_date.month), str(media_file.capture_date.day))
-            save_dir_path = os.path.join(settings.output_dir, date_path)
+            output_dir_path_type = settings.output_dir_path_type
+            output_dir = settings.output_dir
         else:
+            output_dir_path_type = settings.unknown_output_dir_path_type
+            output_dir = settings.unknown_output_dir
+
+        if output_dir_path_type == "Use Original Paths":
             parent_dir_rel_path = os.path.relpath(media_file.parent_dir_path, settings.monitored_dir)
-            save_dir_path = os.path.join(settings.unknown_output_dir, parent_dir_rel_path)
+            save_dir_path = os.path.join(output_dir, parent_dir_rel_path)
+        elif output_dir_path_type == "Sort by Date":
+            date_path = os.path.join(str(media_file.capture_date.year), str(media_file.capture_date.month), str(media_file.capture_date.day))
+            save_dir_path = os.path.join(output_dir, date_path)
+        else:
+            raise RuntimeError("Output file path type '{}' is not supported", output_dir_path_type)
         return save_dir_path
 
     @staticmethod
