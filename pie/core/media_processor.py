@@ -165,10 +165,7 @@ class MediaProcessor:
 
         save_dir_path = MediaProcessor.get_save_dir_path(media_file, settings)
         file_extension = MediaProcessor.get_save_file_extension(media_file)
-        if (capture_date):
-            save_file_path = MediaProcessor.get_regular_save_file_path(media_file, save_dir_path, file_extension)
-        else:
-            save_file_path = MediaProcessor.get_unknown_save_file_path(media_file, save_dir_path, file_extension)
+        save_file_path = MediaProcessor.get_output_file_path(media_file, save_dir_path, file_extension, settings)
         media_file.output_rel_file_path = os.path.relpath(save_file_path, out_dir)
         MongoDB.insert_media_file(media_file)
         return save_file_path
@@ -203,19 +200,17 @@ class MediaProcessor:
         return file_extension
 
     @staticmethod
-    def get_unknown_save_file_path(media_file: MediaFile, save_dir_path: str, file_extension: str):
-        original_file_name = os.path.basename(media_file.file_path)
-        file_name_tuple = os.path.splitext(original_file_name)
-        file_name_without_extension = file_name_tuple[0]
-        return MediaProcessor.find_save_file_path(save_dir_path, file_name_without_extension, file_extension)
+    def get_output_file_path(media_file: MediaFile, save_dir_path: str, file_extension: str, settings: Settings):
+        output_dir_path_type = settings.output_dir_path_type if media_file.capture_date else settings.unknown_output_dir_path_type
+        if output_dir_path_type == "Use Original Paths":
+            original_file_name = os.path.basename(media_file.file_path)
+            file_name_tuple = os.path.splitext(original_file_name)
+            file_name = file_name_tuple[0]
+        elif output_dir_path_type == "Sort by Date":
+            file_name = media_file.capture_date.strftime("%H%M%S")
+        else:
+            raise RuntimeError("Output file path type '{}' is not supported", output_dir_path_type)
 
-    @staticmethod
-    def get_regular_save_file_path(media_file: MediaFile, save_dir_path: str, file_extension: str):
-        time_prefix = media_file.capture_date.strftime("%H%M%S")
-        return MediaProcessor.find_save_file_path(save_dir_path, time_prefix, file_extension)
-
-    @staticmethod
-    def find_save_file_path(save_dir_path: str, file_name: str, file_extension: str):
         ideal_save_path = os.path.join(save_dir_path, file_name + file_extension)
         if (not os.path.isfile(ideal_save_path)):
             save_file_path = ideal_save_path

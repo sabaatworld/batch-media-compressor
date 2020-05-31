@@ -7,7 +7,7 @@ from mongoengine import connect, disconnect, disconnect_all, Document
 
 class MongoDB:
     __logger = logging.getLogger('MongoDB')
-    __DB_NAME = "pie2"
+    __DB_NAME = "pie"
 
     @staticmethod
     def connect_db():
@@ -77,16 +77,19 @@ class MongoDB:
         if (not settings.log_file_dir):
             settings.log_file_dir = "logs"
             save_record = True
-        if (not settings.convert_unknown):
-            settings.convert_unknown = False
-            save_record = True
         if (not settings.output_dir_path_type):
             settings.output_dir_path_type = "Use Original Paths"
             save_record = True
         if (not settings.unknown_output_dir_path_type):
             settings.unknown_output_dir_path_type = "Use Original Paths"
             save_record = True
-        if (not settings.overwrite_output_files):
+        if (settings.skip_same_name_video == None):
+            settings.skip_same_name_video = True
+            save_record = True
+        if (settings.convert_unknown == None):
+            settings.convert_unknown = False
+            save_record = True
+        if (settings.overwrite_output_files == None):
             settings.overwrite_output_files = False
             save_record = True
         if (not settings.indexing_workers):

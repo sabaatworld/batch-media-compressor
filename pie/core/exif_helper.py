@@ -72,7 +72,7 @@ class ExifHelper:
     @staticmethod
     def __get_capture_date(exif: dict):
         # Candidates: "GPSDateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "CreationDate"
-        date_str = ExifHelper.__get_exif(exif, "GPSDateTime", "DateTimeOriginal", "CreateDate")
+        date_str = ExifHelper.__get_exif(exif, "DateTimeOriginal", "GPSDateTime", "CreateDate")
         if (date_str and not re.search(": +:|0000:00:00 00:00:00", date_str)):
             # Possible formats are yyyy:MM:dd HH:mm / yyyy.MM.dd HH:mm:ss / iPhoneImage: yyyy.MM.dd HH:mm:ss.FFF / iPhone 5: yyyy.MM.dd HH:mm:ss.XXZ
             # iPhoneVideo: yyyy.MM.dd HH:mm:sszzz, etc. To work with the automatic parser, we modify the date part a bit.
@@ -84,7 +84,7 @@ class ExifHelper:
                     date_str_parts[1] = time_str_parts[0] + "Z"
             date_str = " ".join(date_str_parts)
             capture_datetime = parse(date_str)
-            return capture_datetime.astimezone(UTC)
+            return capture_datetime.astimezone(UTC) # TODO date gets messed up when timeZone is not specified. Sometimes it is local, sometimes UTC.
 
     @staticmethod
     def __append_dimentions(media_file: MediaFile, exif: dict):

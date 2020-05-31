@@ -54,6 +54,7 @@ class ApplicationWindow():
         self.btnRestoreDefaults: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnRestoreDefaults')
         self.lblTaskStatus: QtWidgets.QLabel = self.window.findChild(QtWidgets.QLabel, 'lblTaskStatus')
         self.pbTaskProgress: QtWidgets.QProgressBar = self.window.findChild(QtWidgets.QProgressBar, 'pbTaskProgress')
+        self.chkSkipSameNameVideo: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkSkipSameNameVideo')
         self.chkConvertUnknown: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkConvertUnknown')
         self.chkOverwriteFiles: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkOverwriteFiles')
         self.spinImageQuality: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageQuality')
@@ -75,6 +76,7 @@ class ApplicationWindow():
         self.btnPickUnknownOutputDir.clicked.connect(self.btnPickUnknownOutputDir_click)
         self.cbOutputDirPathType.currentTextChanged.connect(self.cbOutputDirPathType_currentTextChanged)
         self.cbUnknownOutputDirPathType.currentTextChanged.connect(self.cbUnknownOutputDirPathType_currentTextChanged)
+        self.chkSkipSameNameVideo.stateChanged.connect(self.chkSkipSameNameVideo_stateChanged)
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
 
@@ -195,6 +197,7 @@ class ApplicationWindow():
         self.txtOutputDir.setText(self.settings.output_dir)
         self.cbOutputDirPathType.setCurrentIndex(self.cbOutputDirPathType.findText(self.settings.output_dir_path_type))
         self.cbUnknownOutputDirPathType.setCurrentIndex(self.cbUnknownOutputDirPathType.findText(self.settings.unknown_output_dir_path_type))
+        self.chkSkipSameNameVideo.setChecked(self.settings.skip_same_name_video)
         self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
         self.chkOverwriteFiles.setChecked(self.settings.overwrite_output_files)
         self.spinImageQuality.setValue(self.settings.image_compression_quality)
@@ -253,6 +256,10 @@ class ApplicationWindow():
 
     def cbUnknownOutputDirPathType_currentTextChanged(self, new_text: str):
         self.settings.unknown_output_dir_path_type = new_text
+        MongoDB.save_settings(self.settings)
+
+    def chkSkipSameNameVideo_stateChanged(self):
+        self.settings.skip_same_name_video = self.chkSkipSameNameVideo.isChecked()
         MongoDB.save_settings(self.settings)
 
     def chkConvertUnknown_stateChanged(self):

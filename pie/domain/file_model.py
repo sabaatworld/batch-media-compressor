@@ -6,7 +6,7 @@ from mongoengine import Document, EmbeddedDocument, StringField, ListField, Refe
 
 
 class ScannedFileType(Enum):
-    __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIFF", "PNG", "BMP", "CR2", "DNG"]
+    __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIFF", "PNG", "BMP", "CR2", "DNG", "HEIC"]
     __VIDEO_EXTENSIONS__ = ["MOV", "MP4", "M4V", "3G2", "3GP", "AVI", "MTS", "MPG", "MPEG"]
 
     IMAGE = 1
@@ -101,6 +101,7 @@ class Settings(Document):
     output_dir_path_type: str = StringField()
     unknown_output_dir_path_type: str = StringField()
     log_file_dir: str = StringField()
+    skip_same_name_video: bool = BooleanField()
     convert_unknown: bool = BooleanField()
     overwrite_output_files: bool = BooleanField()
     indexing_workers: int = LongField()
