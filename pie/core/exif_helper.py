@@ -4,7 +4,7 @@ import os
 import pyexifinfo
 import mimetypes
 import re
-from pie.domain import MediaFile, ScannedFile, GPSInfo, GPSAddressDecodeStatus
+from pie.domain import MediaFile, ScannedFile
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.tz import UTC
@@ -42,7 +42,10 @@ class ExifHelper:
         media_file.camera_make = ExifHelper.__get_exif(exif, "Make")
         media_file.camera_model = ExifHelper.__get_exif(exif, "CameraModelName", "Model")
         media_file.lens_model = ExifHelper.__get_exif(exif, "LensModel", "LensType", "LensInfo")
-        media_file.gps_info = ExifHelper.__get_gps_info(exif)
+        gps_info = ExifHelper.__get_gps_info(exif)
+        media_file.gps_alt = gps_info['altitude']
+        media_file.gps_lat = gps_info['latitude']
+        media_file.gps_long = gps_info['longitude']
         exif_orientation = ExifHelper.__get_exif(exif, "Orientation", "CameraOrientation")
         media_file.view_rotation = ExifHelper.__get_view_rotation(exif_orientation)
         media_file.image_orientation = exif_orientation
@@ -101,8 +104,7 @@ class ExifHelper:
 
     @staticmethod
     def __get_gps_info(exif: dict):
-        gps_info = GPSInfo()
-        gps_info.address_decode_status = GPSAddressDecodeStatus.NOT_ATTEMPTED.name
+        gps_info = {}
         altitude_str = ExifHelper.__get_exif(exif, "GPSAltitude")
         if (altitude_str):
             altitude = float(altitude_str.split(" ")[0])
@@ -110,12 +112,13 @@ class ExifHelper:
             below_sea_level = "Below Sea Level"  # "Above Sea Level" is not used for anything yet
             if (below_sea_level in altitude_str or (altitude_ref_str and below_sea_level in altitude_ref_str)):
                 altitude = altitude * -1.0
-            gps_info.altitude = altitude
+            gps_info['altitude'] = altitude
         longitude = ExifHelper.__gps_coordinate_str_to_float(ExifHelper.__get_exif(exif, "GPSLongitude"))
         latitude = ExifHelper.__gps_coordinate_str_to_float(ExifHelper.__get_exif(exif, "GPSLatitude"))
         if (longitude and latitude):
-            gps_info.point = [longitude, latitude]
-        return gps_info if (gps_info.altitude or gps_info.point) else None
+            gps_info['longitude'] = longitude
+            gps_info['latitude'] = latitude
+        return gps_info
 
     @staticmethod
     def __gps_coordinate_str_to_float(coordinate_str: str):

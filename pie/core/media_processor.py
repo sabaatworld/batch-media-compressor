@@ -5,7 +5,7 @@ import math
 import os
 from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
 from pie.util import PyProcessPool
-from .mongo_db import MongoDB
+from .index_db import IndexDB
 from typing import List
 from datetime import datetime
 from multiprocessing import Queue, Event, Lock, Manager
@@ -21,9 +21,9 @@ class MediaProcessor:
 
     def save_processed_files(self):
         MediaProcessor.__logger.info("BEGIN:: Media file conversion")
-        media_files = MongoDB.get_all_media_file_ordered()
-        if (not media_files or len(media_files) == 0):
-            MediaProcessor.__logger.info("No media files found in MongoDB")
+        media_files = IndexDB.get_all_media_file_ordered()
+        if (not media_files or media_files.count() == 0):
+            MediaProcessor.__logger.info("No media files found in IndexDB")
         else:
             manager = Manager()
             save_file_path_computation_lock = manager.Lock()
@@ -48,7 +48,7 @@ class MediaProcessor:
     def start_gpu_pool(self, save_file_path_computation_lock: Lock, media_files: List[MediaFile]):
         process_count = self.__indexing_task.settings.gpu_count * self.__indexing_task.settings.gpu_workers
         pool = PyProcessPool(pool_name="GPUConversionWorker", process_count=process_count, log_queue=self.__log_queue, target=MediaProcessor.conversion_process_exec,
-                             initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
+                             initializer=IndexDB.connect_db, terminator=IndexDB.disconnect_db, stop_event=self.__indexing_stop_event)
         tasks = []
         for media_file_index, media_file in enumerate(media_files, start=0):
             target_gpu = media_file_index % self.__indexing_task.settings.gpu_count
@@ -58,7 +58,7 @@ class MediaProcessor:
 
     def start_cpu_pool(self, save_file_path_computation_lock: Lock, media_files: List[MediaFile]):
         pool = PyProcessPool(pool_name="CPUConversionWorker", process_count=self.__indexing_task.settings.conversion_workers, log_queue=self.__log_queue,
-                             target=MediaProcessor.conversion_process_exec, initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
+                             target=MediaProcessor.conversion_process_exec, initializer=IndexDB.connect_db, terminator=IndexDB.disconnect_db, stop_event=self.__indexing_stop_event)
         tasks = list(map(lambda media_file: (self.__indexing_task, media_file, -1, save_file_path_computation_lock), media_files))
         pool.submit(tasks)
         return pool
@@ -167,7 +167,7 @@ class MediaProcessor:
         file_extension = MediaProcessor.get_save_file_extension(media_file)
         save_file_path = MediaProcessor.get_output_file_path(media_file, save_dir_path, file_extension, settings)
         media_file.output_rel_file_path = os.path.relpath(save_file_path, out_dir)
-        MongoDB.insert_media_file(media_file)
+        IndexDB.insert_media_file(media_file)
         return save_file_path
 
     @staticmethod

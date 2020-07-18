@@ -4,7 +4,7 @@ import concurrent.futures
 import multiprocessing
 import time
 from pie.domain import ScannedFile, ScannedFileType, IndexingTask, MediaFile
-from .mongo_db import MongoDB
+from .index_db import IndexDB
 from .exif_helper import ExifHelper
 from typing import List, Dict, Callable
 from datetime import datetime
@@ -23,23 +23,23 @@ class IndexingHelper:
         self.__indexing_stop_event = indexing_stop_event
 
     def lookup_already_indexed_files(self, scanned_files: List[ScannedFile]):
-        IndexingHelper.__logger.info("BEGIN:: MongoDB lookup for indexed files")
+        IndexingHelper.__logger.info("BEGIN:: IndexDB lookup for indexed files")
         total_scanned_files = len(scanned_files)
         for scanned_file_num, scanned_file in enumerate(scanned_files, start=1):
-            media_file = MongoDB.get_by_file_path(scanned_file.file_path)
+            media_file = IndexDB.get_by_file_path(scanned_file.file_path)
             if (media_file):
                 scanned_file.already_indexed = True
                 if (scanned_file.creation_time > media_file.index_time or scanned_file.last_modification_time > media_file.index_time):
                     scanned_file.needs_reindex = True
             IndexingHelper.__logger.info("Searched Index %s/%s: %s (AlreadyIndexed = %s, NeedsReindex= %s)", scanned_file_num, total_scanned_files,
                                          scanned_file.file_path, scanned_file.already_indexed, scanned_file.needs_reindex)
-        IndexingHelper.__logger.info("END:: MongoDB lookup for indexed files")
+        IndexingHelper.__logger.info("END:: IndexDB lookup for indexed files")
 
     def remove_slate_files(self, scanned_files: List[ScannedFile]):
         IndexingHelper.__logger.info("BEGIN:: Deletion of slate files")
-        media_files: List[MediaFile] = MongoDB.get_all_media_file_ordered()
-        if (not media_files or len(media_files) == 0):
-            IndexingHelper.__logger.info("No media files found in MongoDB")
+        media_files: List[MediaFile] = IndexDB.get_all_media_file_ordered()
+        if (not media_files or media_files.count() == 0):
+            IndexingHelper.__logger.info("No media files found in IndexDB")
         else:
             for media_file in media_files:
                 if (not any(scanned_file.file_path == media_file.file_path for scanned_file in scanned_files)):
@@ -49,7 +49,7 @@ class IndexingHelper:
                         output_file = os.path.join(out_dir, media_file.output_rel_file_path)
                         if (os.path.exists(output_file)):
                             os.remove(output_file)
-                    MongoDB.delete_document(media_file)
+                    IndexDB.delete_media_file(media_file)
         IndexingHelper.__logger.info("END:: Deletion of slate files")
 
     def scan_dirs(self):
@@ -95,7 +95,7 @@ class IndexingHelper:
     def create_media_files(self, scanned_files: List[ScannedFile]):
         IndexingHelper.__logger.info("BEGIN:: Media file creation and indexing")
         pool = PyProcessPool(pool_name="IndexingWorker", process_count=self.__indexing_task.settings.indexing_workers, log_queue=self.__log_queue,
-                             target=IndexingHelper.indexing_process_exec, initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
+                             target=IndexingHelper.indexing_process_exec, initializer=IndexDB.connect_db, terminator=IndexDB.disconnect_db, stop_event=self.__indexing_stop_event)
         tasks = list(map(lambda scanned_file: (self.__indexing_task, scanned_file), scanned_files))
         media_files = pool.submit_and_wait(tasks)
         IndexingHelper.__logger.info("END:: Media file creation and indexing")
@@ -107,7 +107,7 @@ class IndexingHelper:
             try:
                 existing_media_file = None
                 if (scanned_file.needs_reindex):
-                    existing_media_file: MediaFile = MongoDB.get_by_file_path(scanned_file.file_path)
+                    existing_media_file: MediaFile = IndexDB.get_by_file_path(scanned_file.file_path)
                     if (existing_media_file and existing_media_file.output_rel_file_path):
                         out_dir = indexing_task.settings.output_dir if existing_media_file.capture_date else indexing_task.settings.unknown_output_dir
                         existing_output_file = os.path.join(out_dir, existing_media_file.output_rel_file_path)
@@ -116,7 +116,7 @@ class IndexingHelper:
                             os.remove(existing_output_file)
                 media_file = ExifHelper.create_media_file(indexing_task.indexing_time, scanned_file, existing_media_file)
                 if (media_file):
-                    MongoDB.insert_media_file(media_file)
+                    IndexDB.insert_media_file(media_file)
                 logging.info("Indexed Successfully %s: %s", task_id, scanned_file.file_path)
                 return media_file  # PyProcessPool will take care of filtering None values
             except:

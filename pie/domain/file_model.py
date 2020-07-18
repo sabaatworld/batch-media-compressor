@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import List
 from multiprocessing import Queue
 from mongoengine import Document, EmbeddedDocument, StringField, ListField, ReferenceField, EmbeddedDocumentField, DateTimeField, ComplexDateTimeField, FloatField, EmbeddedDocumentListField, PointField, IntField, LongField, BooleanField
+from pie.common import Base
+from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, Float
 
 
 class ScannedFileType(Enum):
@@ -37,83 +39,57 @@ class ScannedFile:
         self.needs_reindex = needs_reindex
 
 
-class GPSAddressDecodeStatus(Enum):
-    NOT_ATTEMPTED = 1
-    DECODED = 2
-    NO_MATCH = 3
+class MediaFile(Base):
+    __tablename__ = 'media_files'
+    uuid = Column(String, primary_key=True)
+    parent_dir_path = Column(String)
+    file_path = Column(String)
+    extension = Column(String)
+    file_type = Column(String)
+    mime = Column(String)
+    original_size = Column(Integer)
+    creation_time = Column(DateTime)
+    last_modification_time = Column(DateTime)
+    index_time = Column(DateTime)
+    height = Column(Integer)
+    width = Column(Integer)
+    capture_date = Column(DateTime)
+    camera_make = Column(String)
+    camera_model = Column(String)
+    lens_model = Column(String)
+    gps_long = Column(Float)
+    gps_lat = Column(Float)
+    gps_alt = Column(Float)
+    view_rotation = Column(String)
+    image_orientation = Column(String)
+    video_duration = Column(Integer)
+    video_rotation = Column(String)
+    output_rel_file_path = Column(String)
 
 
-class GPSInfo(EmbeddedDocument):
-    point = PointField()
-    altitude = FloatField()
-    country = StringField()
-    city = StringField()
-    zip_code = StringField()
-    street_address = StringField()
-    address_decode_status = StringField()
-
-
-class MediaFile(Document):
-    uuid = StringField()
-    parent_dir_path = StringField()
-    file_path = StringField()
-    extension = StringField()
-    file_type = StringField()
-    mime = StringField()
-    original_size = LongField()
-    creation_time = DateTimeField()
-    last_modification_time = DateTimeField()
-    index_time = DateTimeField()
-    height = IntField()
-    width = IntField()
-    capture_date = DateTimeField()
-    camera_make = StringField()
-    camera_model = StringField()
-    lens_model = StringField()
-    gps_info = EmbeddedDocumentField(GPSInfo)
-    view_rotation = StringField()
-    image_orientation = StringField()
-    video_duration = IntField()
-    video_rotation = StringField()
-    output_rel_file_path = StringField()
-    meta = {
-        'indexes': [
-            {
-                'fields': ['file_path'],
-                'unique': True
-            },
-            {
-                'fields': ['uuid'],
-                'unique': True
-            },
-            {
-                'fields': ['output_rel_file_path']  # Can't be unique since its also saved as None
-            }
-        ]
-    }
-
-
-class Settings(Document):
-    monitored_dir: str = StringField()
-    dirs_to_exclude: list = ListField()
-    output_dir: str = StringField()
-    unknown_output_dir: str = StringField()
-    output_dir_path_type: str = StringField()
-    unknown_output_dir_path_type: str = StringField()
-    log_file_dir: str = StringField()
-    skip_same_name_video: bool = BooleanField()
-    convert_unknown: bool = BooleanField()
-    overwrite_output_files: bool = BooleanField()
-    indexing_workers: int = LongField()
-    conversion_workers: int = LongField()
-    gpu_workers: int = LongField()
-    gpu_count: int = LongField()
-    image_compression_quality: int = LongField()
-    image_max_dimension: int = LongField()
-    video_max_dimension: int = LongField()
-    video_crf: int = LongField()
-    video_nvenc_preset: str = StringField()
-    video_audio_bitrate: int = LongField()
+class Settings(Base):
+    __tablename__ = 'settings'
+    id: str = Column(String, primary_key=True)
+    monitored_dir: str = Column(String)
+    dirs_to_exclude: str = Column(String)
+    output_dir: str = Column(String)
+    unknown_output_dir: str = Column(String)
+    output_dir_path_type: str = Column(String)
+    unknown_output_dir_path_type: str = Column(String)
+    app_data_dir: str = Column(String)
+    skip_same_name_video: bool = Column(Boolean)
+    convert_unknown: bool = Column(Boolean)
+    overwrite_output_files: bool = Column(Boolean)
+    indexing_workers: int = Column(Integer)
+    conversion_workers: int = Column(Integer)
+    gpu_workers: int = Column(Integer)
+    gpu_count: int = Column(Integer)
+    image_compression_quality: int = Column(Integer)
+    image_max_dimension: int = Column(Integer)
+    video_max_dimension: int = Column(Integer)
+    video_crf: int = Column(Integer)
+    video_nvenc_preset: str = Column(String)
+    video_audio_bitrate: int = Column(Integer)
 
 
 class IndexingTask:

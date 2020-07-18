@@ -17,7 +17,12 @@ class MiscUtils:
         self.__indexing_task = indexing_task
 
     @staticmethod
-    def configure_logging(log_file_dir: str):
+    def get_app_data_dir():
+        return 'app_data'
+
+    @staticmethod
+    def configure_logging():
+        log_file_dir = os.path.join(MiscUtils.get_app_data_dir(), "logs")
         os.makedirs(log_file_dir, exist_ok=True)
         formatter = logging.Formatter('[%(asctime)s][%(processName)s][%(threadName)s][%(name)s] %(levelname)5s: %(message)s')
         console_handler = logging.StreamHandler(sys.stdout)

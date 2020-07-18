@@ -1,81 +1,90 @@
 import logging
 import multiprocessing
+import os
 from pie.domain import MediaFile, Settings
 from pie.util import MiscUtils
 from mongoengine import connect, disconnect, disconnect_all, Document
+from pie.common import Base
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import sessionmaker
 
 
-class MongoDB:
-    __logger = logging.getLogger('MongoDB')
+class IndexDB:
+    __logger = logging.getLogger('IndexDB')
     __DB_NAME = "pie"
 
     @staticmethod
     def connect_db():
-        connect(MongoDB.__DB_NAME)
-        MongoDB.__logger.info("Connected to MongoDB")
+        # For in-memory, use: 'sqlite:///:memory:'
+        IndexDB.__engine = create_engine('sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index.db"), echo=True)
+        Base.metadata.create_all(IndexDB.__engine)
+        IndexDB.__Session = sessionmaker(bind=IndexDB.__engine)
+        IndexDB.__logger.info("Connected to IndexDB")
 
     @staticmethod
     def disconnect_db():
-        disconnect()
-        MongoDB.__logger.info("Disconnected from MongoDB")
-
-    @staticmethod
-    def disconnect_db_all():
-        disconnect_all()
-        MongoDB.__logger.info("Disconnected all from MongoDB")
+        IndexDB.__engine.dispose()
+        IndexDB.__logger.info("Disconnected from IndexDB")
 
     @staticmethod
     def clear_indexed_files():
-        MediaFile.drop_collection()
-        MongoDB.__logger.info("Indexed file MongoDB collection cleared")
+        session = IndexDB.__Session()
+        session.query(MediaFile).delete()
+        session.commit()
+        session.close()
+        IndexDB.__logger.info("Indexed file IndexDB collection cleared")
 
     @staticmethod
     def clear_settings():
-        Settings.drop_collection()
-        MongoDB.__logger.info("Settings cleared")
+        session = IndexDB.__Session()
+        session.query(Settings).delete()
+        session.commit()
+        session.close()
+        IndexDB.__logger.info("Settings cleared")
 
     @staticmethod
     def insert_media_file(media_file: MediaFile):
-        media_file.save()
+        session = inspect(media_file).session
+        if (session):
+            session.commit()
+        else:
+            session = IndexDB.__Session()
+            session.add(media_file)
+            session.commit()
+            session.close()
 
     @staticmethod
     def get_by_file_path(file_path_to_query: str):
-        results = MediaFile.objects(file_path=file_path_to_query)
-        if results and len(results) > 0:
-            return results[0]
-        return None
+        session = IndexDB.__Session()
+        return session.query(MediaFile).filter_by(file_path=file_path_to_query).first()
 
     @staticmethod
     def get_by_output_rel_path(output_rel_path_to_query: str):
-        results = MediaFile.objects(output_rel_file_path = output_rel_path_to_query)
-        if results and len(results) > 0:
-            return results[0]
-        return None
-    
+        session = IndexDB.__Session()
+        return session.query(MediaFile).filter_by(output_rel_file_path=output_rel_path_to_query).first()
+
     @staticmethod
-    def delete_document(document: Document):
-        document.delete()
+    def delete_media_file(media_file: MediaFile):
+        inspect(media_file).session.delete(media_file)
 
     @staticmethod
     def get_all_media_file_ordered():
         # Sort entries like: None -> 2003 -> 2004 -> 2019 -> ect
-        return MediaFile.objects().order_by(MediaFile.capture_date.name)
+        session = IndexDB.__Session()
+        return session.query(MediaFile).order_by(MediaFile.capture_date)
 
     @staticmethod
     def get_settings():
+        session = IndexDB.__Session()
         save_record = False
-        results = Settings.objects()
-        if (results and len(results) > 0):
-            settings = results[0]
-        else:
-            settings = Settings()
+        settings = session.query(Settings).filter_by(id='app_settings').first()
+        if (not settings):
+            settings = Settings(id='app_settings')
+            save_record = True
 
         # Apply defaults if they are not already set
         if (not settings.dirs_to_exclude):
-            settings.dirs_to_exclude = []
-            save_record = True
-        if (not settings.log_file_dir):
-            settings.log_file_dir = "logs"
+            settings.dirs_to_exclude = '[]'
             save_record = True
         if (not settings.output_dir_path_type):
             settings.output_dir_path_type = "Use Original Paths"
@@ -124,9 +133,11 @@ class MongoDB:
             save_record = True
 
         if (save_record):
-            MongoDB.save_settings(settings)
+            session.add(settings)
+            session.commit()
+
         return settings
 
     @staticmethod
     def save_settings(settings: Settings):
-        settings.save()
+        inspect(settings).session.commit()
