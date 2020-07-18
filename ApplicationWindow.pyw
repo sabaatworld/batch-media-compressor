@@ -3,24 +3,24 @@ import random
 import logging
 import multiprocessing
 import threading
-from pie.core import IndexingHelper, ExifHelper, MediaProcessor, MongoDB, RestServer
+import json
+from pie.core import IndexingHelper, ExifHelper, MediaProcessor, IndexDB, RestServer
 from pie.util import MiscUtils, QWorker
 from pie.domain import IndexingTask, Settings
 from PySide2 import QtCore, QtWidgets, QtGui, QtUiTools
 from datetime import datetime
-
-from multiprocessing import Queue, Event
+from multiprocessing import Queue, Event, Manager
 
 
 class ApplicationWindow():
     __logger = logging.getLogger('ApplicationWindow')
 
     def __init__(self, main_window_ui_file_path: str):
-        MongoDB.connect_db()
-        self.settings = MongoDB.get_settings()
+        self.__indexDB = IndexDB()
+        self.settings = self.__indexDB.get_settings()
 
-        MiscUtils.configure_logging(self.settings.log_file_dir)
-        self.log_queue = Queue()
+        MiscUtils.configure_logging()
+        self.log_queue = Manager().Queue()
         self.logger_thread = threading.Thread(target=MiscUtils.logger_thread_exec, args=(self.log_queue,))
         self.logger_thread.start()
 
@@ -102,11 +102,11 @@ class ApplicationWindow():
         self.indexing_task: IndexingTask = None
         self.indexing_stop_event: Event = None
 
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
         self.apply_settings()
 
-        self.restServer = RestServer(self.settings, self.log_queue)  # TODO move this somewhere else so that it picks up the latest settings
-        self.restServer.startServer()
+        # self.restServer = RestServer(self.settings, self.log_queue)  # TODO move this somewhere else so that it picks up the latest settings
+        # self.restServer.startServer()
 
     def show(self):
         self.window.show()
@@ -115,7 +115,7 @@ class ApplicationWindow():
         selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor")
         if (selected_directory):
             self.settings.monitored_dir = selected_directory
-            MongoDB.save_settings(self.settings)
+            self.__indexDB.save_settings(self.settings)
             self.txtMonitoredDir.setText(self.settings.monitored_dir)
 
     def lwDirsToExclude_itemSelectionChanged(self):
@@ -124,31 +124,35 @@ class ApplicationWindow():
 
     def btnAddDirToExclude_click(self):
         selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick a directory to exclude")
-        if (selected_directory and not selected_directory in self.settings.dirs_to_exclude):
-            self.settings.dirs_to_exclude.append(selected_directory)
+        current_dirs_to_exclude = json.loads(self.settings.dirs_to_exclude)
+        if (selected_directory and not selected_directory in current_dirs_to_exclude):
+            current_dirs_to_exclude.append(selected_directory)
+            self.settings.dirs_to_exclude = json.dumps(current_dirs_to_exclude)
             self.lwDirsToExclude.addItem(selected_directory)
-            MongoDB.save_settings(self.settings)
+            self.__indexDB.save_settings(self.settings)
 
     def btnDelDirToExclude_click(self):
         selected_items = self.lwDirsToExclude.selectedItems()
         for selected_item in selected_items:
             selected_item: QtWidgets.QListWidgetItem = selected_item
-            self.settings.dirs_to_exclude.remove(selected_item.text())
+            current_dirs_to_exclude = json.loads(self.settings.dirs_to_exclude)
+            current_dirs_to_exclude.remove(selected_item.text())
+            self.settings.dirs_to_exclude = json.dumps(current_dirs_to_exclude)
             self.lwDirsToExclude.takeItem(self.lwDirsToExclude.row(selected_item))
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def btnPickOutputDir_click(self):
         selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory")
         if (selected_directory):
             self.settings.output_dir = selected_directory
-            MongoDB.save_settings(self.settings)
+            self.__indexDB.save_settings(self.settings)
             self.txtOutputDir.setText(self.settings.output_dir)
 
     def btnPickUnknownOutputDir_click(self):
         selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory")
         if (selected_directory):
             self.settings.unknown_output_dir = selected_directory
-            MongoDB.save_settings(self.settings)
+            self.__indexDB.save_settings(self.settings)
             self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
 
     def btnStartIndex_click(self):
@@ -172,10 +176,10 @@ class ApplicationWindow():
 
     def btnClearIndex_click(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
-            self.window, "Confirm Action", "Clear indexed files from MongoDB and delete all output files?",
+            self.window, "Confirm Action", "Clear indexed files from IndexDB and delete all output files?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if (QtWidgets.QMessageBox.Yes == response):
-            MongoDB.clear_indexed_files()
+            self.__indexDB.clear_indexed_files()
             MiscUtils.recursively_delete_children(self.settings.output_dir)
             MiscUtils.recursively_delete_children(self.settings.unknown_output_dir)
             self.__logger.info("Output directories cleared")
@@ -185,14 +189,14 @@ class ApplicationWindow():
             self.window, "Confirm Action", "Clear all settings and restore defaults?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if (QtWidgets.QMessageBox.Yes == response):
-            MongoDB.clear_settings()
-            self.settings = MongoDB.get_settings()
+            self.__indexDB.clear_settings()
+            self.settings = self.__indexDB.get_settings()
             self.apply_settings()
 
     def apply_settings(self):
         self.txtMonitoredDir.setText(self.settings.monitored_dir)
         self.lwDirsToExclude.clear()
-        self.lwDirsToExclude.addItems(self.settings.dirs_to_exclude)
+        self.lwDirsToExclude.addItems(json.loads(self.settings.dirs_to_exclude))
         self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
         self.txtOutputDir.setText(self.settings.output_dir)
         self.cbOutputDirPathType.setCurrentIndex(self.cbOutputDirPathType.findText(self.settings.output_dir_path_type))
@@ -218,27 +222,30 @@ class ApplicationWindow():
     def cleanup(self):
         ApplicationWindow.__logger.info("Performing cleanup")
         self.stop_async_tasks()
-        self.restServer.stopServer()
-        MongoDB.disconnect_db()
+        # self.restServer.stopServer()
+        self.__indexDB.disconnect_db()
         self.log_queue.put(None)
+        ApplicationWindow.__logger.debug("Waiting for logging thread to terminate")
         self.logger_thread.join()
+        ApplicationWindow.__logger.info("Cleanup completed")
 
     def start_indexing(self, progress_callback):
-        MiscUtils.debug_this_thread()
-        self.indexing_task = IndexingTask()
-        self.indexing_task.settings = self.settings
-        misc_utils = MiscUtils(self.indexing_task)
-        misc_utils.create_root_marker()
-        indexing_helper = IndexingHelper(self.indexing_task, self.log_queue, self.indexing_stop_event)
-        scanned_files = indexing_helper.scan_dirs()
-        indexing_helper.remove_slate_files(scanned_files)
-        indexing_helper.lookup_already_indexed_files(scanned_files)
-        indexing_helper.create_media_files(scanned_files)
-        if (not self.indexing_stop_event.is_set()):
-            media_processor = MediaProcessor(self.indexing_task, self.log_queue, self.indexing_stop_event)
-            media_processor.save_processed_files()
-        if (not self.indexing_stop_event.is_set()):
-            misc_utils.cleanEmptyOutputDirs()
+        with IndexDB() as indexDB:
+            MiscUtils.debug_this_thread()
+            self.indexing_task = IndexingTask()
+            self.indexing_task.settings = self.settings
+            misc_utils = MiscUtils(self.indexing_task)
+            misc_utils.create_root_marker()
+            indexing_helper = IndexingHelper(self.indexing_task, self.log_queue, self.indexing_stop_event)
+            scanned_files = indexing_helper.scan_dirs()
+            indexing_helper.remove_slate_files(indexDB, scanned_files)
+            indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
+            indexing_helper.create_media_files(scanned_files)
+            if (not self.indexing_stop_event.is_set()):
+                media_processor = MediaProcessor(self.indexing_task, self.log_queue, self.indexing_stop_event)
+                media_processor.save_processed_files(indexDB)
+            if (not self.indexing_stop_event.is_set()):
+                misc_utils.cleanEmptyOutputDirs()
 
     def indexing_finished(self):
         self.btnStartIndex.setEnabled(True)
@@ -252,63 +259,63 @@ class ApplicationWindow():
 
     def cbOutputDirPathType_currentTextChanged(self, new_text: str):
         self.settings.output_dir_path_type = new_text
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def cbUnknownOutputDirPathType_currentTextChanged(self, new_text: str):
         self.settings.unknown_output_dir_path_type = new_text
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def chkSkipSameNameVideo_stateChanged(self):
         self.settings.skip_same_name_video = self.chkSkipSameNameVideo.isChecked()
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def chkConvertUnknown_stateChanged(self):
         self.settings.convert_unknown = self.chkConvertUnknown.isChecked()
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def chkOverwriteFiles_stateChanged(self):
         self.settings.overwrite_output_files = self.chkOverwriteFiles.isChecked()
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinImageQuality_valueChanged(self, new_value: int):
         self.settings.image_compression_quality = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinImageMaxDimension_valueChanged(self, new_value: int):
         self.settings.image_max_dimension = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinVideoMaxDimension_valueChanged(self, new_value: int):
         self.settings.video_max_dimension = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinVideoCrf_valueChanged(self, new_value: int):
         self.settings.video_crf = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def cbVideoNvencPreset_currentTextChanged(self, new_text: str):
         self.settings.video_nvenc_preset = new_text
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinVideoAudioBitrate_valueChanged(self, new_value: int):
         self.settings.video_audio_bitrate = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinIndexingWorkers_valueChanged(self, new_value: int):
         self.settings.indexing_workers = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinConversionWorkers_valueChanged(self, new_value: int):
         self.settings.conversion_workers = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinGpuWorkers_valueChanged(self, new_value: int):
         self.settings.gpu_workers = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
     def spinGpuCount_valueChanged(self, new_value: int):
         self.settings.gpu_count = new_value
-        MongoDB.save_settings(self.settings)
+        self.__indexDB.save_settings(self.settings)
 
 
 if __name__ == "__main__":

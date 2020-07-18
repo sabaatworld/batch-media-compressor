@@ -17,7 +17,14 @@ class MiscUtils:
         self.__indexing_task = indexing_task
 
     @staticmethod
-    def configure_logging(log_file_dir: str):
+    def get_app_data_dir():
+        app_data_dir = os.path.abspath('app_data')
+        os.makedirs(app_data_dir, exist_ok=True)
+        return app_data_dir
+
+    @staticmethod
+    def configure_logging():
+        log_file_dir = os.path.join(MiscUtils.get_app_data_dir(), "logs")
         os.makedirs(log_file_dir, exist_ok=True)
         formatter = logging.Formatter('[%(asctime)s][%(processName)s][%(threadName)s][%(name)s] %(levelname)5s: %(message)s')
         console_handler = logging.StreamHandler(sys.stdout)
@@ -38,8 +45,11 @@ class MiscUtils:
             record = log_queue.get()
             if record is None:
                 break
-            logger = logging.getLogger(record.name)
-            logger.handle(record)
+            try:
+                logger = logging.getLogger(record.name)
+                logger.handle(record)
+            except:
+                MiscUtils.__logger.exception('Exception in logging thread')
 
     @staticmethod
     def configure_worker_logger(log_queue: Queue):

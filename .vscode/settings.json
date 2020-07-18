@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": "c:\\Users\\sabaa\\Source\\VSCode\\pie-indexing-service-py\\.venv\\Scripts\\python.exe",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "python.linting.pylintArgs": [
@@ -9,5 +8,6 @@
     "python.formatting.provider": "autopep8",
     "python.formatting.autopep8Args": [
         "--max-line-length=200"
-    ]
+    ],
+    "python.pythonPath": ".venv/bin/python"
 }

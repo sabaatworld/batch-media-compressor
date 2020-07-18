@@ -5,7 +5,7 @@ import math
 import os
 from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
 from pie.util import PyProcessPool
-from .mongo_db import MongoDB
+from .index_db import IndexDB
 from typing import List
 from datetime import datetime
 from multiprocessing import Queue, Event, Lock, Manager
@@ -19,11 +19,11 @@ class MediaProcessor:
         self.__log_queue = log_queue
         self.__indexing_stop_event = indexing_stop_event
 
-    def save_processed_files(self):
+    def save_processed_files(self, indexDB: IndexDB):
         MediaProcessor.__logger.info("BEGIN:: Media file conversion")
-        media_files = MongoDB.get_all_media_file_ordered()
-        if (not media_files or len(media_files) == 0):
-            MediaProcessor.__logger.info("No media files found in MongoDB")
+        media_files = indexDB.get_all_media_file_ordered()
+        if (not media_files or media_files.count() == 0):
+            MediaProcessor.__logger.info("No media files found in IndexDB")
         else:
             manager = Manager()
             save_file_path_computation_lock = manager.Lock()
@@ -48,33 +48,35 @@ class MediaProcessor:
     def start_gpu_pool(self, save_file_path_computation_lock: Lock, media_files: List[MediaFile]):
         process_count = self.__indexing_task.settings.gpu_count * self.__indexing_task.settings.gpu_workers
         pool = PyProcessPool(pool_name="GPUConversionWorker", process_count=process_count, log_queue=self.__log_queue, target=MediaProcessor.conversion_process_exec,
-                             initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
+                             initializer=IndexDB.create_instance, terminator=IndexDB.destroy_instance, stop_event=self.__indexing_stop_event)
         tasks = []
         for media_file_index, media_file in enumerate(media_files, start=0):
             target_gpu = media_file_index % self.__indexing_task.settings.gpu_count
-            tasks.append([self.__indexing_task, media_file, target_gpu, save_file_path_computation_lock])
+            tasks.append([media_file.file_path, target_gpu, save_file_path_computation_lock])
         pool.submit(tasks)
         return pool
 
     def start_cpu_pool(self, save_file_path_computation_lock: Lock, media_files: List[MediaFile]):
         pool = PyProcessPool(pool_name="CPUConversionWorker", process_count=self.__indexing_task.settings.conversion_workers, log_queue=self.__log_queue,
-                             target=MediaProcessor.conversion_process_exec, initializer=MongoDB.connect_db, terminator=MongoDB.disconnect_db, stop_event=self.__indexing_stop_event)
-        tasks = list(map(lambda media_file: (self.__indexing_task, media_file, -1, save_file_path_computation_lock), media_files))
+                             target=MediaProcessor.conversion_process_exec, initializer=IndexDB.create_instance, terminator=IndexDB.destroy_instance, stop_event=self.__indexing_stop_event)
+        tasks = list(map(lambda media_file: (media_file.file_path, -1, save_file_path_computation_lock), media_files))
         pool.submit(tasks)
         return pool
 
     @staticmethod
-    def conversion_process_exec(indexing_task: IndexingTask, media_file: MediaFile, target_gpu: int, save_file_path_computation_lock: Lock, task_id: str):
+    def conversion_process_exec(media_file_path: str, target_gpu: int, save_file_path_computation_lock: Lock, indexDB: IndexDB, task_id: str):
+        settings: Settings = indexDB.get_settings()
+        media_file = indexDB.get_by_file_path(media_file_path)
         processing_start_time = time.time()
         original_file_path = media_file.file_path
         save_file_path_copy = "UNKNOWN"  # Creating a copy so that it can be used with exception logging below
         try:
             with save_file_path_computation_lock:
-                save_file_path = MediaProcessor.get_save_file_path(media_file, indexing_task.settings)
+                save_file_path = MediaProcessor.get_save_file_path(indexDB, media_file, settings)
                 save_file_path_copy = save_file_path
 
             skip_conversion: bool = False
-            if (not media_file.capture_date and not indexing_task.settings.convert_unknown):  # No captureDate and conversion not requested for unknown
+            if (not media_file.capture_date and not settings.convert_unknown):  # No captureDate and conversion not requested for unknown
                 if os.path.exists(save_file_path):
                     os.remove(save_file_path)
                     logging.info("Deleted Converted File %s: %s -> %s", task_id, original_file_path, save_file_path)
@@ -82,14 +84,14 @@ class MediaProcessor:
             else:
                 os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
                 open(save_file_path, 'a').close()  # Append mode ensures that existing file is not emptied TODO move to lock block above
-                if (not indexing_task.settings.overwrite_output_files and os.path.exists(save_file_path) and os.path.getsize(save_file_path) > 0):
+                if (not settings.overwrite_output_files and os.path.exists(save_file_path) and os.path.getsize(save_file_path) > 0):
                     skip_conversion = True
 
             if not skip_conversion:
                 if ScannedFileType.IMAGE.name == media_file.file_type:
-                    MediaProcessor.convert_image_file(indexing_task.settings, media_file, original_file_path, save_file_path)
+                    MediaProcessor.convert_image_file(settings, media_file, original_file_path, save_file_path)
                 if ScannedFileType.VIDEO.name == media_file.file_type:
-                    MediaProcessor.convert_video_file(indexing_task.settings, media_file, original_file_path, save_file_path, target_gpu)
+                    MediaProcessor.convert_video_file(settings, media_file, original_file_path, save_file_path, target_gpu)
                 MediaProcessor.copy_exif_to_file(original_file_path, save_file_path, media_file.video_rotation)
                 logging.info("Converted %s: %s -> %s (%s%%) (%ss)", task_id, original_file_path, save_file_path,
                              round(os.path.getsize(save_file_path) / media_file.original_size * 100, 2), round(time.time() - processing_start_time, 2))
@@ -157,7 +159,7 @@ class MediaProcessor:
         return {'height': math.floor(new_height), 'width': math.floor(new_width)}
 
     @staticmethod
-    def get_save_file_path(media_file: MediaFile, settings: Settings):
+    def get_save_file_path(indexDB: IndexDB, media_file: MediaFile, settings: Settings):
         capture_date: datetime = media_file.capture_date
         out_dir = settings.output_dir if capture_date else settings.unknown_output_dir
         if (media_file.output_rel_file_path):
@@ -167,7 +169,7 @@ class MediaProcessor:
         file_extension = MediaProcessor.get_save_file_extension(media_file)
         save_file_path = MediaProcessor.get_output_file_path(media_file, save_dir_path, file_extension, settings)
         media_file.output_rel_file_path = os.path.relpath(save_file_path, out_dir)
-        MongoDB.insert_media_file(media_file)
+        indexDB.insert_media_file(media_file)
         return save_file_path
 
     @staticmethod

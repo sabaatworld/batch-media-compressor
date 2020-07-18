@@ -63,7 +63,9 @@ class PyProcess(Process):
     def run(self):
         MiscUtils.configure_worker_logger(self.__log_queue)
         if (self.__initializer):
-            self.__initializer(*self.__initializer_args)
+            initialization_result = self.__initializer(*self.__initializer_args)
+        else:
+            initialization_result = None
 
         self.__logger.debug("Starting task execution loop")
         while True:
@@ -75,8 +77,8 @@ class PyProcess(Process):
             if (self.__stop_event == None or not self.__stop_event.is_set()):
                 try:
                     args = next_task[0]
-                    id = next_task[1]
-                    result = self.__target(*args, task_id=id)
+                    task_id = next_task[1]
+                    result = self.__target(*args, initialization_result, task_id)
                     if (result and self.__result_queue != None):
                         self.__result_queue.put(result)
                 except:
@@ -85,4 +87,4 @@ class PyProcess(Process):
         self.__logger.debug("Exited task execution loop")
 
         if (self.__terminator):
-            self.__terminator(*self.__terminator_args)
+            self.__terminator(*self.__terminator_args, initialization_result)

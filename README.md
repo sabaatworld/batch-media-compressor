@@ -31,24 +31,19 @@ Although you could just copy over the compressed / converted files to your porta
 
     ```bash
     py -3 -m venv .venv
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
     .venv\scripts\activate
     ```
 
 1. Download **ExifTool** (Tested with 11.76) binary - <https://www.sno.phy.queensu.ca/~phil/exiftool/>. Ensure `exiftool` is on PATH.
 1. The requirements.txt file has been created using `pip freeze > requirements.txt`. Execute `pip install -r requirements.txt` to install the required packages.
-1. Install **MongoDB** (Tested with 4.2.1) - <https://docs.mongodb.com/manual/administration/install-community/>. Setup MongoDB to run as a service automatically so that it does not need to be started everytime.
 1. Install **ImageMagick** (Tested with 7.0.9) - <http://docs.wand-py.org/en/0.5.7/guide/install.html>. Ensure "MAGICK_HOME" has been setup properly. Also ensure that RAW handling binaries are available; which can be checked by running `convert -list configure`.
 
-    * Mac
+    * Installing RAW support libraries on Mac
 
     ```bash
     brew install dcraw
     brew install ufraw
-    ```
-
-    * Win
-
-    ```bash
     ```
 
 1. Install **ffmpeg** (Tested with 4.2.1) - <https://www.ffmpeg.org/download.html>. Make sure `ffmpeg` is on PATH.

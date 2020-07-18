@@ -2,7 +2,7 @@ import logging
 import os
 from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
 from pie.util import PyProcess, MiscUtils
-from .mongo_db import MongoDB
+from .index_db import IndexDB
 from multiprocessing import Queue, Event, JoinableQueue, Process
 from flask import Flask, escape, request
 from send2trash import send2trash
@@ -18,7 +18,7 @@ class RestServer:
     @staticmethod
     def execStartServer(settings: Settings, log_queue: Queue):
         MiscUtils.configure_worker_logger(log_queue)
-        MongoDB.connect_db()
+        IndexDB.connect_db()
         app = Flask('PIE_REST_API')
 
         @app.route('/')
@@ -31,7 +31,7 @@ class RestServer:
             output_rel_path = request.form['output_rel_path']
             logging.info("Received request to delete original for: %s", output_rel_path)
             if output_rel_path:
-                media_file: MediaFile = MongoDB.get_by_output_rel_path(output_rel_path)
+                media_file: MediaFile = IndexDB.get_by_output_rel_path(output_rel_path)
                 if (media_file):
                     if (os.path.exists(media_file.file_path)):
                         logging.info("Moving original to trash: %s", media_file.file_path)

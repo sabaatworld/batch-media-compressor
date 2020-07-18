@@ -1,5 +1,5 @@
 # Custom Stuff
-logs
+app_data
 .DS_Store
 
 # Suggestions taken from https://github.com/github/gitignore/blob/master/Python.gitignore
