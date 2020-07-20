@@ -41,9 +41,9 @@ class ExifHelper:
         media_file.camera_model = ExifHelper.__get_exif(exif, "CameraModelName", "Model")
         media_file.lens_model = ExifHelper.__get_exif(exif, "LensModel", "LensType", "LensInfo")
         gps_info = ExifHelper.__get_gps_info(exif)
-        media_file.gps_alt = gps_info['altitude']
-        media_file.gps_lat = gps_info['latitude']
-        media_file.gps_long = gps_info['longitude']
+        media_file.gps_alt = gps_info.get('altitude')
+        media_file.gps_lat = gps_info.get('latitude')
+        media_file.gps_long = gps_info.get('longitude')
         exif_orientation = ExifHelper.__get_exif(exif, "Orientation", "CameraOrientation")
         media_file.view_rotation = ExifHelper.__get_view_rotation(exif_orientation)
         media_file.image_orientation = exif_orientation

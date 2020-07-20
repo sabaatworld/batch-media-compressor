@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>990</width>
-    <height>490</height>
+    <height>492</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -199,44 +199,24 @@
        <string>Output Directories</string>
       </property>
      </widget>
-     <widget class="QWidget" name="horizontalLayoutWidget">
+     <widget class="QWidget" name="gridLayoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>30</y>
         <width>601</width>
-        <height>41</height>
+        <height>91</height>
        </rect>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="minimumSize">
-          <size>
-           <width>150</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Media with Capture Date</string>
-         </property>
-        </widget>
-       </item>
-       <item>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="2">
         <widget class="QLineEdit" name="txtOutputDir">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QPushButton" name="btnPickOutputDir">
-         <property name="text">
-          <string>Pick Directory</string>
-         </property>
-        </widget>
-       </item>
-       <item>
+       <item row="0" column="4">
         <widget class="QComboBox" name="cbOutputDirPathType">
          <item>
           <property name="text">
@@ -250,19 +230,50 @@
          </item>
         </widget>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="horizontalLayoutWidget_4">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>80</y>
-        <width>601</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Media with Capture Date</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="btnPickOutputDir">
+         <property name="text">
+          <string>Pick Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4">
+        <widget class="QComboBox" name="cbUnknownOutputDirPathType">
+         <item>
+          <property name="text">
+           <string>Use Original Paths</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QPushButton" name="btnPickUnknownOutputDir">
+         <property name="text">
+          <string>Pick Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="txtUnknownOutputDir">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
         <widget class="QLabel" name="label_8">
          <property name="minimumSize">
           <size>
@@ -273,29 +284,6 @@
          <property name="text">
           <string>Media without Capture Date</string>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="txtUnknownOutputDir">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="btnPickUnknownOutputDir">
-         <property name="text">
-          <string>Pick Directory</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="cbUnknownOutputDirPathType">
-         <item>
-          <property name="text">
-           <string>Use Original Paths</string>
-          </property>
-         </item>
         </widget>
        </item>
       </layout>
@@ -744,7 +732,7 @@
      <rect>
       <x>10</x>
       <y>410</y>
-      <width>652</width>
+      <width>641</width>
       <height>31</height>
      </rect>
     </property>
@@ -766,7 +754,7 @@
      <item>
       <widget class="QCheckBox" name="chkOverwriteFiles">
        <property name="text">
-        <string>Overwrite Files in Output Directories</string>
+        <string>Overwrite Converted Files</string>
        </property>
       </widget>
      </item>
