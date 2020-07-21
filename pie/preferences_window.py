@@ -1,33 +1,21 @@
-import sys
-import random
 import logging
-import multiprocessing
-import threading
 import json
-from pie.core import IndexingHelper, ExifHelper, MediaProcessor, IndexDB, RestServer
-from pie.util import MiscUtils, QWorker
-from pie.domain import IndexingTask, Settings
-from PySide2 import QtCore, QtWidgets, QtGui, QtUiTools
-from datetime import datetime
-from multiprocessing import Queue, Event, Manager
+from pie.core import IndexDB, RestServer
+from pie.domain import Settings
+from PySide2 import QtCore, QtWidgets, QtUiTools
+from multiprocessing import Queue
 
 
-class ApplicationWindow():
-    __logger = logging.getLogger('ApplicationWindow')
+class PreferencesWindow:
+    __logger = logging.getLogger('PreferencesWindow')
+    __UI_FILE = "assets/mainwindow.ui"
 
-    def __init__(self, main_window_ui_file_path: str):
+    def __init__(self, log_queue: Queue):
+        self.log_queue = log_queue
         self.__indexDB = IndexDB()
         self.settings = self.__indexDB.get_settings()
 
-        MiscUtils.configure_logging()
-        self.log_queue = Manager().Queue()
-        self.logger_thread = threading.Thread(target=MiscUtils.logger_thread_exec, args=(self.log_queue,))
-        self.logger_thread.start()
-
-        self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
-        ApplicationWindow.__logger.info("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
-
-        ui_file = QtCore.QFile(main_window_ui_file_path)
+        ui_file = QtCore.QFile(PreferencesWindow.__UI_FILE)
         ui_file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
         self.window: QtWidgets.QMainWindow = loader.load(ui_file)
@@ -48,9 +36,6 @@ class ApplicationWindow():
         self.cbOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbOutputDirPathType')
         self.cbUnknownOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbUnknownOutputDirPathType')
 
-        self.btnStartIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStartIndex')
-        self.btnStop: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnStop')
-        self.btnClearIndex: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnClearIndex')
         self.btnRestoreDefaults: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnRestoreDefaults')
         self.lblTaskStatus: QtWidgets.QLabel = self.window.findChild(QtWidgets.QLabel, 'lblTaskStatus')
         self.pbTaskProgress: QtWidgets.QProgressBar = self.window.findChild(QtWidgets.QProgressBar, 'pbTaskProgress')
@@ -80,9 +65,6 @@ class ApplicationWindow():
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
 
-        self.btnStartIndex.clicked.connect(self.btnStartIndex_click)
-        self.btnStop.clicked.connect(self.btnStop_click)
-        self.btnClearIndex.clicked.connect(self.btnClearIndex_click)
         self.btnRestoreDefaults.clicked.connect(self.btnRestoreDefaults_click)
 
         self.spinImageQuality.valueChanged.connect(self.spinImageQuality_valueChanged)
@@ -97,10 +79,6 @@ class ApplicationWindow():
         self.spinGpuCount.valueChanged.connect(self.spinGpuCount_valueChanged)
 
         self.cbVideoNvencPreset: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbVideoNvencPreset')
-
-        # Following variables are set later on
-        self.indexing_task: IndexingTask = None
-        self.indexing_stop_event: Event = None
 
         self.__indexDB.save_settings(self.settings)
         self.apply_settings()
@@ -155,35 +133,6 @@ class ApplicationWindow():
             self.__indexDB.save_settings(self.settings)
             self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
 
-    def btnStartIndex_click(self):
-        self.btnStartIndex.setEnabled(False)
-        self.btnClearIndex.setEnabled(False)
-        self.btnRestoreDefaults.setEnabled(False)
-        self.indexing_stop_event = Event()
-        self.indexing_worker = QWorker(self.start_indexing)
-        self.indexing_worker.signals.progress.connect(self.indexing_progress)
-        self.indexing_worker.signals.finished.connect(self.indexing_finished)
-        self.threadpool.start(self.indexing_worker)
-        self.btnStop.setEnabled(True)
-
-    def btnStop_click(self):
-        response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
-            self.window, "Confirm Action", "Are you sure you want to stop the current task?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if (QtWidgets.QMessageBox.Yes == response):
-            self.btnStop.setEnabled(False)
-            self.stop_async_tasks()
-
-    def btnClearIndex_click(self):
-        response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
-            self.window, "Confirm Action", "Clear indexed files from IndexDB and delete all output files?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if (QtWidgets.QMessageBox.Yes == response):
-            self.__indexDB.clear_indexed_files()
-            MiscUtils.recursively_delete_children(self.settings.output_dir)
-            MiscUtils.recursively_delete_children(self.settings.unknown_output_dir)
-            self.__logger.info("Output directories cleared")
-
     def btnRestoreDefaults_click(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
             self.window, "Confirm Action", "Clear all settings and restore defaults?",
@@ -215,47 +164,12 @@ class ApplicationWindow():
         self.spinGpuWorkers.setValue(self.settings.gpu_workers)
         self.spinGpuCount.setValue(self.settings.gpu_count)
 
-    def stop_async_tasks(self):
-        if(self.indexing_stop_event):
-            self.indexing_stop_event.set()
-
     def cleanup(self):
-        ApplicationWindow.__logger.info("Performing cleanup")
-        self.stop_async_tasks()
+        self.__logger.info("Performing cleanup")
+        self.window.hide()
         # self.restServer.stopServer()
         self.__indexDB.disconnect_db()
-        self.log_queue.put(None)
-        ApplicationWindow.__logger.debug("Waiting for logging thread to terminate")
-        self.logger_thread.join()
-        ApplicationWindow.__logger.info("Cleanup completed")
-
-    def start_indexing(self, progress_callback):
-        with IndexDB() as indexDB:
-            MiscUtils.debug_this_thread()
-            self.indexing_task = IndexingTask()
-            self.indexing_task.settings = self.settings
-            misc_utils = MiscUtils(self.indexing_task)
-            misc_utils.create_root_marker()
-            indexing_helper = IndexingHelper(self.indexing_task, self.log_queue, self.indexing_stop_event)
-            scanned_files = indexing_helper.scan_dirs()
-            indexing_helper.remove_slate_files(indexDB, scanned_files)
-            indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
-            indexing_helper.create_media_files(scanned_files)
-            if (not self.indexing_stop_event.is_set()):
-                media_processor = MediaProcessor(self.indexing_task, self.log_queue, self.indexing_stop_event)
-                media_processor.save_processed_files(indexDB)
-            if (not self.indexing_stop_event.is_set()):
-                misc_utils.cleanEmptyOutputDirs()
-
-    def indexing_finished(self):
-        self.btnStartIndex.setEnabled(True)
-        self.btnClearIndex.setEnabled(True)
-        self.btnRestoreDefaults.setEnabled(True)
-        self.btnStop.setEnabled(False)
-        pass
-
-    def indexing_progress(self, progress):
-        print("%d%% done" % progress)
+        self.__logger.info("Cleanup completed")
 
     def cbOutputDirPathType_currentTextChanged(self, new_text: str):
         self.settings.output_dir_path_type = new_text
@@ -316,21 +230,3 @@ class ApplicationWindow():
     def spinGpuCount_valueChanged(self, new_value: int):
         self.settings.gpu_count = new_value
         self.__indexDB.save_settings(self.settings)
-
-
-if __name__ == "__main__":
-    MAIN_WINDOW_UI_FILE_PATH = "assets/mainwindow.ui"
-    APP_ICON_FILE_PATH = "assets/pie_logo.png"
-
-    multiprocessing.set_start_method('spawn')
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
-    QtGui.QGuiApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon(APP_ICON_FILE_PATH))
-    app.setApplicationDisplayName("PIE Indexing Service")  # TODO test + add org / ver
-    application_window = ApplicationWindow(MAIN_WINDOW_UI_FILE_PATH)
-    application_window.show()
-    return_code = app.exec_()
-    logging.info("Application is being shutdown")
-    application_window.cleanup()
-    sys.exit(return_code)

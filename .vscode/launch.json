@@ -8,7 +8,7 @@
             "name": "PIE Indexing Service",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/ApplicationWindow.pyw",
+            "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "subProcess": true,
             "justMyCode": false
