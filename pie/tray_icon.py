@@ -18,10 +18,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
 
-        self.setToolTip("PIE Indexing Service")
+        self.setToolTip("Personal Image Explorer")
         self.activated.connect(self.trayIcon_activated)
 
-        tray_menu = QtWidgets.QMenu('PIE Indexing Service Context Menu')
+        tray_menu = QtWidgets.QMenu('Main Menu')
         self.startIndexAction = tray_menu.addAction('Start Indexing', self.startIndexAction_triggered)
         self.stopIndexAction = tray_menu.addAction('Stop Indexing', self.stopIndexAction_triggered)
         self.stopIndexAction.setEnabled(False)

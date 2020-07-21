@@ -21,6 +21,7 @@ class PreferencesWindow:
         self.window: QtWidgets.QMainWindow = loader.load(ui_file)
         ui_file.close()
 
+        self.window.setWindowTitle("Edit Preferences")
         self.window.setFixedSize(self.window.size())
 
         self.txtMonitoredDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtMonitoredDir')

@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon(APP_ICON_FILE_PATH))
-    app.setApplicationDisplayName("PIE Indexing Service")  # TODO test + add org / ver
+    app.setApplicationDisplayName("Personal Image Explorer")  # TODO test + add org / ver
     app.setQuitOnLastWindowClosed(False)
 
     tray_icon = TrayIcon(APP_ICON_FILE_PATH, log_queue)

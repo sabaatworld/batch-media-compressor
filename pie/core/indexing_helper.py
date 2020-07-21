@@ -25,6 +25,8 @@ class IndexingHelper:
         IndexingHelper.__logger.info("BEGIN:: IndexDB lookup for indexed files")
         total_scanned_files = len(scanned_files)
         for scanned_file_num, scanned_file in enumerate(scanned_files, start=1):
+            if (self.__indexing_stop_event.is_set()):
+                break
             media_file = indexDB.get_by_file_path(scanned_file.file_path)
             if (media_file):
                 scanned_file.already_indexed = True
@@ -41,6 +43,8 @@ class IndexingHelper:
             IndexingHelper.__logger.info("No media files found in IndexDB")
         else:
             for media_file in media_files:
+                if (self.__indexing_stop_event.is_set()):
+                    break
                 if (not any(scanned_file.file_path == media_file.file_path for scanned_file in scanned_files)):
                     IndexingHelper.__logger.info("Deleting slate entry %s and its output file %s", media_file.file_path, media_file.output_rel_file_path)
                     if (media_file.output_rel_file_path):
@@ -61,6 +65,8 @@ class IndexingHelper:
         IndexingHelper.__logger.info("BEGIN:: Scanning DIR: %s", dir)
         scanned_files = []
         for dir_path, _, file_names in os.walk(dir):
+            if (self.__indexing_stop_event.is_set()):
+                break
             if (self.exclude_dir_from_scan(dir_path)):
                 IndexingHelper.__logger.info("Skipping Directory Scan: %s", dir_path)
             else:
