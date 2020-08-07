@@ -47,6 +47,9 @@ class IndexDB:
     def get_by_output_rel_path(self, output_rel_path_to_query: str):
         return self.__session.query(MediaFile).filter_by(output_rel_file_path=output_rel_path_to_query).first()
 
+    def get_by_parent_dir_sorted_lexicographically(self, parent_dir_path: str):
+        return self.__session.query(MediaFile).filter_by(parent_dir_path=parent_dir_path).order_by(MediaFile.file_path)
+
     def delete_media_file(self, media_file: MediaFile):
         session = self.__session
         session.delete(media_file)

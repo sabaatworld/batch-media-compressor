@@ -8,7 +8,7 @@ from multiprocessing import Queue
 
 class PreferencesWindow:
     __logger = logging.getLogger('PreferencesWindow')
-    __UI_FILE = "assets/mainwindow.ui"
+    __UI_FILE = "assets/preferences_window.ui"
 
     def __init__(self, log_queue: Queue):
         self.log_queue = log_queue

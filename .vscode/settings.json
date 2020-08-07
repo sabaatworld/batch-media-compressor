@@ -9,5 +9,11 @@
     "python.formatting.autopep8Args": [
         "--max-line-length=200"
     ],
-    "python.pythonPath": ".venv/bin/python"
+    "python.pythonPath": "/Users/sabaata/Projects/VisualStudioCode/pie-indexing-service-py/.venv/bin/python3",
+    "files.exclude": {
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    }
 }

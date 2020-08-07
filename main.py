@@ -2,7 +2,7 @@ import sys
 import logging
 import multiprocessing
 import threading
-from pie import TrayIcon, PreferencesWindow
+from pie import TrayIcon, PreferencesWindow, ExifFixerWindow
 from pie.util import MiscUtils
 from multiprocessing import Manager
 from PySide2 import QtCore, QtWidgets, QtGui
@@ -26,9 +26,12 @@ if __name__ == "__main__":
 
     tray_icon = TrayIcon(APP_ICON_FILE_PATH, log_queue)
     tray_icon.show()
+
+    exif_fixer = ExifFixerWindow(log_queue)
+    exif_fixer.show()
     return_code = app.exec_()
 
-    # tray_icon.cleanup()
+    tray_icon.cleanup()
     logging.info("Application is being shutdown")
     log_queue.put(None)
     logging.debug("Waiting for logging thread to terminate")
