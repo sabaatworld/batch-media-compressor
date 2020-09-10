@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>990</width>
-    <height>492</height>
+    <height>531</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>450</y>
+      <y>480</y>
       <width>641</width>
       <height>41</height>
      </rect>
@@ -685,38 +685,58 @@
      </property>
     </widget>
    </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_5">
+   <widget class="QGroupBox" name="groupBox_7">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>410</y>
       <width>641</width>
-      <height>31</height>
+      <height>71</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_5">
-     <item>
-      <widget class="QCheckBox" name="chkSkipSameNameVideo">
-       <property name="text">
-        <string>Skip Live Image's Video</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="chkConvertUnknown">
-       <property name="text">
-        <string>Convert Media without Capture Date</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="chkOverwriteFiles">
-       <property name="text">
-        <string>Overwrite Converted Files</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <property name="title">
+     <string/>
+    </property>
+    <widget class="QWidget" name="gridLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>9</x>
+       <y>-1</y>
+       <width>621</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="chkSkipSameNameRaw">
+        <property name="text">
+         <string>Skip RAW File with Same Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="chkSkipSameNameVideo">
+        <property name="text">
+         <string>Skip Video File with Same Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="chkConvertUnknown">
+        <property name="text">
+         <string>Convert Media without Capture Date</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="chkOverwriteFiles">
+        <property name="text">
+         <string>Overwrite Converted Files</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
   </widget>
  </widget>

@@ -6,8 +6,10 @@ from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, Float
 
 
 class ScannedFileType(Enum):
-    __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIFF", "PNG", "BMP", "CR2", "DNG", "HEIC"]
+    __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIF", "TIFF", "PNG", "BMP", "HEIC"]
+    __RAW_IMAGE_EXTENSIONS__ = ["CR2", "DNG"]
     __VIDEO_EXTENSIONS__ = ["MOV", "MP4", "M4V", "3G2", "3GP", "AVI", "MTS", "MPG", "MPEG"]
+    __RAW_VIDEO_EXTENSIONS__ = []
 
     IMAGE = 1
     VIDEO = 2
@@ -16,21 +18,26 @@ class ScannedFileType(Enum):
     @staticmethod
     def get_type(extension):
         if extension in ScannedFileType.__IMAGE_EXTENSIONS__:
-            return ScannedFileType.IMAGE
+            return (ScannedFileType.IMAGE, False)
+        elif extension in ScannedFileType.__RAW_IMAGE_EXTENSIONS__:
+            return (ScannedFileType.IMAGE, True)
         elif extension in ScannedFileType.__VIDEO_EXTENSIONS__:
-            return ScannedFileType.VIDEO
+            return (ScannedFileType.VIDEO, False)
+        elif extension in ScannedFileType.__RAW_VIDEO_EXTENSIONS__:
+            return (ScannedFileType.VIDEO, True)
         else:
-            return ScannedFileType.UNKNOWN
+            return (ScannedFileType.UNKNOWN, False)
 
 
 class ScannedFile:
 
-    def __init__(self, parent_dir_path, file_path, extension, file_type, creation_time, last_modification_time,
+    def __init__(self, parent_dir_path, file_path, extension, file_type, is_raw, creation_time, last_modification_time,
                  already_indexed=False, index_id=None, needs_reindex=False):
         self.parent_dir_path = parent_dir_path
         self.file_path = file_path
         self.extension = extension
         self.file_type = file_type
+        self.is_raw = is_raw
         self.creation_time = creation_time
         self.last_modification_time = last_modification_time
         self.already_indexed = already_indexed
@@ -43,6 +50,7 @@ class MediaFile(Base):
     file_path = Column(String, primary_key=True)
     extension = Column(String)
     file_type = Column(String)
+    is_raw = Column(Boolean)
     mime = Column(String)
     original_size = Column(Integer)
     creation_time = Column(DateTime)
@@ -75,6 +83,7 @@ class Settings(Base):
     unknown_output_dir_path_type: str = Column(String)
     app_data_dir: str = Column(String)
     skip_same_name_video: bool = Column(Boolean)
+    skip_same_name_raw: bool = Column(Boolean)
     convert_unknown: bool = Column(Boolean)
     overwrite_output_files: bool = Column(Boolean)
     indexing_workers: int = Column(Integer)

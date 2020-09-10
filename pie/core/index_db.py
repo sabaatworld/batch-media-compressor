@@ -84,6 +84,9 @@ class IndexDB:
         if (settings.skip_same_name_video == None):
             settings.skip_same_name_video = True
             save_record = True
+        if (settings.skip_same_name_raw == None):
+            settings.skip_same_name_raw = True
+            save_record = True
         if (settings.convert_unknown == None):
             settings.convert_unknown = False
             save_record = True

@@ -79,17 +79,17 @@ class IndexingHelper:
             if (self.exclude_dir_from_scan(dir_path)):
                 IndexingHelper.__logger.info("Skipping Directory Scan: %s", dir_path)
             else:
-                scanned_files_by_name = {}
+                scanned_files_by_name: Dict[str, List[ScannedFile]] = {}
                 for file_name in file_names:
                     file_name_tuple = os.path.splitext(file_name)
                     file_name_without_extension = file_name_tuple[0]
                     extension = file_name_tuple[1].replace(".", "").upper()
-                    scanned_file_type = ScannedFileType.get_type(extension)
+                    (scanned_file_type, is_raw) = ScannedFileType.get_type(extension)
                     file_path = os.path.join(dir_path, file_name)
                     if (ScannedFileType.UNKNOWN != scanned_file_type):
                         creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
                         last_modification_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                        scanned_file = ScannedFile(dir_path, file_path, extension, scanned_file_type, creation_time, last_modification_time)
+                        scanned_file = ScannedFile(dir_path, file_path, extension, scanned_file_type, is_raw, creation_time, last_modification_time)
                         if file_name_without_extension not in scanned_files_by_name:
                             scanned_files_by_name[file_name_without_extension] = []
                         scanned_files_by_name[file_name_without_extension].append(scanned_file)
@@ -98,8 +98,10 @@ class IndexingHelper:
                 # Filter videos if there are images with the same name
                 for _, files in scanned_files_by_name.items():
                     for file in files:
-                        if (self.__indexing_task.settings.skip_same_name_video and len(files) > 1 and ScannedFileType.IMAGE != file.file_type):
-                            IndexingHelper.__logger.info("File Skipped (SAME_NAME_AS_IMAGE): %s", file.file_path)
+                        if (self.__indexing_task.settings.skip_same_name_video and len(files) > 1 and ScannedFileType.VIDEO == file.file_type):
+                            IndexingHelper.__logger.info("File Skipped (SAME_NAME_VIDEO): %s", file.file_path)
+                        elif(self.__indexing_task.settings.skip_same_name_raw and len(files) > 1 and file.is_raw and any(x.file_type == file.file_type for x in files)):
+                            IndexingHelper.__logger.info("File Skipped (SAME_NAME_RAW): %s", file.file_path)
                         else:
                             IndexingHelper.__logger.info("File Scanned: %s", file.file_path)
                             scanned_files.append(file)

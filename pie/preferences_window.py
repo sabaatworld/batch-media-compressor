@@ -41,6 +41,7 @@ class PreferencesWindow:
         self.lblTaskStatus: QtWidgets.QLabel = self.window.findChild(QtWidgets.QLabel, 'lblTaskStatus')
         self.pbTaskProgress: QtWidgets.QProgressBar = self.window.findChild(QtWidgets.QProgressBar, 'pbTaskProgress')
         self.chkSkipSameNameVideo: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkSkipSameNameVideo')
+        self.chkSkipSameNameRaw: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkSkipSameNameRaw')
         self.chkConvertUnknown: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkConvertUnknown')
         self.chkOverwriteFiles: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkOverwriteFiles')
         self.spinImageQuality: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageQuality')
@@ -63,6 +64,7 @@ class PreferencesWindow:
         self.cbOutputDirPathType.currentTextChanged.connect(self.cbOutputDirPathType_currentTextChanged)
         self.cbUnknownOutputDirPathType.currentTextChanged.connect(self.cbUnknownOutputDirPathType_currentTextChanged)
         self.chkSkipSameNameVideo.stateChanged.connect(self.chkSkipSameNameVideo_stateChanged)
+        self.chkSkipSameNameRaw.stateChanged.connect(self.chkSkipSameNameRaw_stateChanged)
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
 
@@ -155,6 +157,7 @@ class PreferencesWindow:
         self.cbOutputDirPathType.setCurrentIndex(self.cbOutputDirPathType.findText(self.settings.output_dir_path_type))
         self.cbUnknownOutputDirPathType.setCurrentIndex(self.cbUnknownOutputDirPathType.findText(self.settings.unknown_output_dir_path_type))
         self.chkSkipSameNameVideo.setChecked(self.settings.skip_same_name_video)
+        self.chkSkipSameNameRaw.setChecked(self.settings.skip_same_name_raw)
         self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
         self.chkOverwriteFiles.setChecked(self.settings.overwrite_output_files)
         self.spinImageQuality.setValue(self.settings.image_compression_quality)
@@ -185,6 +188,10 @@ class PreferencesWindow:
 
     def chkSkipSameNameVideo_stateChanged(self):
         self.settings.skip_same_name_video = self.chkSkipSameNameVideo.isChecked()
+        self.__indexDB.save_settings(self.settings)
+
+    def chkSkipSameNameRaw_stateChanged(self):
+        self.settings.skip_same_name_raw = self.chkSkipSameNameRaw.isChecked()
         self.__indexDB.save_settings(self.settings)
 
     def chkConvertUnknown_stateChanged(self):

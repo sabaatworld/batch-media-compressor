@@ -30,6 +30,7 @@ class ExifHelper:
         media_file.file_path = file_path
         media_file.extension = scanned_file.extension
         media_file.file_type = scanned_file.file_type.name
+        media_file.is_raw = scanned_file.is_raw
         media_file.mime = ExifHelper.__get_mime(file_path, exif)
         media_file.original_size = os.path.getsize(file_path)
         media_file.creation_time = scanned_file.creation_time
