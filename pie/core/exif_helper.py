@@ -3,7 +3,7 @@ import os
 import pyexifinfo
 import mimetypes
 import re
-from pie.domain import MediaFile, ScannedFile
+from pie.domain import MediaFile, ScannedFile, ScannedFileType
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.tz import UTC
@@ -37,7 +37,7 @@ class ExifHelper:
         media_file.last_modification_time = scanned_file.last_modification_time
         media_file.index_time = index_time
         ExifHelper.__append_dimentions(media_file, exif)
-        media_file.capture_date = ExifHelper.__get_capture_date(exif)
+        media_file.capture_date = ExifHelper.__get_capture_date(scanned_file, exif)
         media_file.camera_make = ExifHelper.__get_exif(exif, "Make")
         media_file.camera_model = ExifHelper.__get_exif(exif, "CameraModelName", "Model")
         media_file.lens_model = ExifHelper.__get_exif(exif, "LensModel", "LensType", "LensInfo")
@@ -72,9 +72,13 @@ class ExifHelper:
             return mime_type[0]
 
     @staticmethod
-    def __get_capture_date(exif: dict):
+    def __get_capture_date(scanned_file: ScannedFile, exif: dict):
         # Candidates: "GPSDateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "CreationDate"
-        date_str = ExifHelper.__get_exif(exif, "DateTimeOriginal", "GPSDateTime", "CreateDate")
+        date_str = None
+        if (scanned_file.file_type == ScannedFileType.IMAGE):
+            date_str = ExifHelper.__get_exif(exif, "DateTimeOriginal")
+        if (scanned_file.file_type == ScannedFileType.VIDEO):
+            date_str = ExifHelper.__get_exif(exif, "MediaCreateDate", "TrackCreateDate")
         if (date_str and not re.search(": +:|0000:00:00 00:00:00", date_str)):
             # Possible formats are yyyy:MM:dd HH:mm / yyyy.MM.dd HH:mm:ss / iPhoneImage: yyyy.MM.dd HH:mm:ss.FFF / iPhone 5: yyyy.MM.dd HH:mm:ss.XXZ
             # iPhoneVideo: yyyy.MM.dd HH:mm:sszzz, etc. To work with the automatic parser, we modify the date part a bit.
