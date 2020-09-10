@@ -116,21 +116,22 @@ class MediaProcessor:
         new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.video_max_dimension)
         audio_bitrate_arg = str(settings.video_audio_bitrate) + "k"
 
+        # Adding ability to play converted videos in QuickTime: https://brandur.org/fragments/ffmpeg-h265
         if (target_gpu < 0):
-            # CPU Sample: ffmpeg -noautorotate -i input -c:v libx265 -crf 28 -c:a aac -vf scale=320:240 -b:a 128k -y output.mp4
+            # CPU Sample: ffmpeg -noautorotate -i input -c:v libx265 -crf 28 -tag:v hvc1 -c:a aac -ac 2 -vf scale=320:240 -b:a 128k -y output.mp4
             args = ["ffmpeg", "-noautorotate",  "-i", original_file_path, "-c:v", "libx265",  "-crf", str(settings.video_crf),
-                    "-c:a",  "aac", "-b:a", audio_bitrate_arg, "-y", new_file_path]
+                    "-tag:v", "hvc1", "-c:a",  "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-y", new_file_path]
             if (new_dimentions):
-                args.insert(10, "-vf")
-                args.insert(11, "scale={}:{}".format(new_dimentions['width'], new_dimentions['height']))
+                args.insert(14, "-vf")
+                args.insert(15, "scale={}:{}".format(new_dimentions['width'], new_dimentions['height']))
         else:
-            # GPU Sample: ffmpeg -noautorotate -hwaccel nvdec -hwaccel_device 0 -i input -c:v hevc_nvenc -preset fast -gpu 0 -c:a aac -b:a 128k -vf "hwupload_cuda,scale_npp=w=1920:h=1080:format=yuv420p" -y output.mp4
+            # GPU Sample: ffmpeg -noautorotate -hwaccel nvdec -hwaccel_device 0 -i input -c:v hevc_nvenc -preset fast -gpu 0 -c:a aac -ac 2 -b:a 128k -tag:v hvc1 -vf "hwupload_cuda,scale_npp=w=1920:h=1080:format=yuv420p" -y output.mp4
             args = ["ffmpeg", "-noautorotate",  "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i",  original_file_path,
                     "-c:v", "hevc_nvenc",  "-preset", settings.video_nvenc_preset, "-gpu", str(target_gpu),
-                    "-c:a",  "aac", "-b:a", audio_bitrate_arg, "-y", new_file_path]
+                    "-c:a",  "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-tag:v", "hvc1", "-y", new_file_path]
             if (new_dimentions):
-                args.insert(18, "-vf")
-                args.insert(19, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
+                args.insert(22, "-vf")
+                args.insert(23, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
         MediaProcessor.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod

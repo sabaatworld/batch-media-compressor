@@ -90,6 +90,9 @@ class PreferencesWindow:
     def show(self):
         self.window.show()
 
+    def hide(self):
+        self.window.hide()
+
     def btnPickMonitoredDir_click(self):
         selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor")
         if (selected_directory):

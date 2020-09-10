@@ -28,7 +28,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
 
         tray_menu.addSeparator()
-        tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
+        self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
         tray_menu.addSeparator()
         tray_menu.addAction('Quit', self.quitMenuAction_triggered)
         self.setContextMenu(tray_menu)
@@ -39,6 +39,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def startIndexAction_triggered(self):
         self.startIndexAction.setEnabled(False)
         self.clearIndexAction.setEnabled(False)
+        self.editPrefAction.setEnabled(False)
+        if (self.preferences_window != None):
+            self.preferences_window.hide()
         self.indexing_stop_event = Event()
         self.indexing_worker = QWorker(self.start_indexing)
         self.indexing_worker.signals.progress.connect(self.indexing_progress)
@@ -87,7 +90,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             scanned_files = indexing_helper.scan_dirs()
             indexing_helper.remove_slate_files(indexDB, scanned_files)
             indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
-            indexing_helper.create_media_files(scanned_files)
+            if (not self.indexing_stop_event.is_set()):
+                indexing_helper.create_media_files(scanned_files)
             if (not self.indexing_stop_event.is_set()):
                 media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
                 media_processor.save_processed_files(indexDB)
@@ -98,7 +102,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.startIndexAction.setEnabled(True)
         self.stopIndexAction.setEnabled(False)
         self.clearIndexAction.setEnabled(True)
-        pass
+        self.editPrefAction.setEnabled(True)
 
     def indexing_progress(self, progress):
         print("%d%% done" % progress)
