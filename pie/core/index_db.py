@@ -6,6 +6,7 @@ from pie.common import Base
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from logging import Logger
+from typing import List, Dict
 
 
 class IndexDB:
@@ -13,7 +14,7 @@ class IndexDB:
 
     def __init__(self):
         # For in-memory, use: 'sqlite:///:memory:'
-        db_file = 'sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index.db")
+        db_file = 'sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index_test.db")
         self.__engine = create_engine(db_file, echo=False)
         Base.metadata.create_all(self.__engine)
         self.__session: Session = sessionmaker(bind=self.__engine)()
@@ -52,9 +53,15 @@ class IndexDB:
         session.delete(media_file)
         session.commit()
 
-    def get_all_media_file_ordered(self):
+    def get_all_media_file_ordered(self) -> List[MediaFile]:
         # Sort entries like: None -> 2003 -> 2004 -> 2019 -> ect
         return self.__session.query(MediaFile).order_by(MediaFile.capture_date)
+
+    def get_all_media_files_by_path(self) -> Dict[str, MediaFile]:
+        media_files_by_path: Dict[str, MediaFile] = {}
+        for media_file in self.get_all_media_file_ordered():
+            media_files_by_path[media_file.file_path] = media_file
+        return media_files_by_path
 
     def get_settings(self):
         session = self.__session

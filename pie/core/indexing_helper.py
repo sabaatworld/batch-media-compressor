@@ -24,13 +24,14 @@ class IndexingHelper:
     def lookup_already_indexed_files(self, indexDB: IndexDB, scanned_files: List[ScannedFile]):
         IndexingHelper.__logger.info("BEGIN:: IndexDB lookup for indexed files")
         total_scanned_files = len(scanned_files)
+        media_files_by_path = indexDB.get_all_media_files_by_path()
         for scanned_file_num, scanned_file in enumerate(scanned_files, start=1):
             if (self.__indexing_stop_event.is_set()):
                 break
-            media_file = indexDB.get_by_file_path(scanned_file.file_path)
-            if (media_file):
+            if (scanned_file.file_path in media_files_by_path):
+                media_file = media_files_by_path[scanned_file.file_path]
                 scanned_file.already_indexed = True
-                if (scanned_file.creation_time > media_file.index_time or scanned_file.last_modification_time > media_file.index_time):
+                if (scanned_file.creation_time != media_file.creation_time or scanned_file.last_modification_time != media_file.last_modification_time):
                     scanned_file.needs_reindex = True
             IndexingHelper.__logger.info("Searched Index %s/%s: %s (AlreadyIndexed = %s, NeedsReindex= %s)", scanned_file_num, total_scanned_files,
                                          scanned_file.file_path, scanned_file.already_indexed, scanned_file.needs_reindex)
@@ -39,21 +40,29 @@ class IndexingHelper:
     def remove_slate_files(self, indexDB: IndexDB, scanned_files: List[ScannedFile]):
         IndexingHelper.__logger.info("BEGIN:: Deletion of slate files")
         media_files: List[MediaFile] = indexDB.get_all_media_file_ordered()
+        scanned_files_by_path = self.get_scanned_files_by_path(scanned_files)
         if (not media_files or media_files.count() == 0):
             IndexingHelper.__logger.info("No media files found in IndexDB")
         else:
             for media_file in media_files:
                 if (self.__indexing_stop_event.is_set()):
                     break
-                if (not any(scanned_file.file_path == media_file.file_path for scanned_file in scanned_files)):
-                    IndexingHelper.__logger.info("Deleting slate entry %s and its output file %s", media_file.file_path, media_file.output_rel_file_path)
+                if (not media_file.file_path in scanned_files_by_path):
+                    output_file = None
                     if (media_file.output_rel_file_path):
                         out_dir = self.__indexing_task.settings.output_dir if media_file.capture_date else self.__indexing_task.settings.unknown_output_dir
                         output_file = os.path.join(out_dir, media_file.output_rel_file_path)
-                        if (os.path.exists(output_file)):
-                            os.remove(output_file)
+                    IndexingHelper.__logger.info("Deleting slate entry %s and its output file %s", media_file.file_path, output_file)
+                    if (not output_file == None and os.path.exists(output_file)):
+                        os.remove(output_file)
                     indexDB.delete_media_file(media_file)
         IndexingHelper.__logger.info("END:: Deletion of slate files")
+
+    def get_scanned_files_by_path(self, scanned_files: List[ScannedFile]) -> Dict[str, ScannedFile]:
+        scanned_files_by_path: Dict[str, ScannedFile] = {}
+        for scanned_file in scanned_files:
+            scanned_files_by_path[scanned_file.file_path] = scanned_file
+        return scanned_files_by_path
 
     def scan_dirs(self):
         IndexingHelper.__logger.info("BEGIN:: Dir scan")
