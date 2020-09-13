@@ -3,6 +3,7 @@ import os
 import sys
 import shutil
 import multiprocessing
+import hashlib
 from pie.domain import IndexingTask
 from logging.handlers import TimedRotatingFileHandler, QueueHandler
 from multiprocessing import Queue
@@ -118,8 +119,16 @@ class MiscUtils:
     def create_root_marker(self):
         os.makedirs(self.__indexing_task.settings.output_dir, exist_ok=True)
         os.makedirs(self.__indexing_task.settings.unknown_output_dir, exist_ok=True)
-        marker_file_name = ".pie_root"
-        with open(os.path.join(self.__indexing_task.settings.output_dir, marker_file_name), 'w') as file:
-            file.write("Just a marker file. Nothing interesting here.")
-        with open(os.path.join(self.__indexing_task.settings.unknown_output_dir, marker_file_name), 'w') as file:
-            file.write("Just a marker file. Nothing interesting here.")
+        # marker_file_name = ".pie_root"
+        # with open(os.path.join(self.__indexing_task.settings.output_dir, marker_file_name), 'w') as file:
+        #     file.write("Just a marker file. Nothing interesting here.")
+        # with open(os.path.join(self.__indexing_task.settings.unknown_output_dir, marker_file_name), 'w') as file:
+        #     file.write("Just a marker file. Nothing interesting here.")
+
+    @staticmethod
+    def generate_hash(file_path: str) -> str:
+        with open(file_path, "rb") as file:
+            file_hash = hashlib.sha1()
+            while chunk := file.read(1048576): # 1MB in bytes
+                file_hash.update(chunk)
+        return file_hash.hexdigest()

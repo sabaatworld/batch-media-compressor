@@ -32,7 +32,9 @@ class IndexingHelper:
                 media_file = media_files_by_path[scanned_file.file_path]
                 scanned_file.already_indexed = True
                 if (scanned_file.creation_time != media_file.creation_time or scanned_file.last_modification_time != media_file.last_modification_time):
-                    scanned_file.needs_reindex = True
+                    scanned_file.hash = MiscUtils.generate_hash(scanned_file.file_path)
+                    if (scanned_file.hash != media_file.original_file_hash):
+                        scanned_file.needs_reindex = True
             IndexingHelper.__logger.info("Searched Index %s/%s: %s (AlreadyIndexed = %s, NeedsReindex= %s)", scanned_file_num, total_scanned_files,
                                          scanned_file.file_path, scanned_file.already_indexed, scanned_file.needs_reindex)
         IndexingHelper.__logger.info("END:: IndexDB lookup for indexed files")
@@ -89,7 +91,7 @@ class IndexingHelper:
                     if (ScannedFileType.UNKNOWN != scanned_file_type):
                         creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
                         last_modification_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                        scanned_file = ScannedFile(dir_path, file_path, extension, scanned_file_type, is_raw, creation_time, last_modification_time)
+                        scanned_file = ScannedFile(dir_path, file_path, extension, scanned_file_type, is_raw, creation_time, last_modification_time, None)
                         if file_name_without_extension not in scanned_files_by_name:
                             scanned_files_by_name[file_name_without_extension] = []
                         scanned_files_by_name[file_name_without_extension].append(scanned_file)

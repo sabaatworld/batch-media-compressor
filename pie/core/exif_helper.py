@@ -4,6 +4,7 @@ import pyexifinfo
 import mimetypes
 import re
 from pie.domain import MediaFile, ScannedFile, ScannedFileType
+from pie.util import MiscUtils
 from datetime import datetime
 from dateutil.parser import parse
 from dateutil.tz import UTC
@@ -35,6 +36,8 @@ class ExifHelper:
         media_file.original_size = os.path.getsize(file_path)
         media_file.creation_time = scanned_file.creation_time
         media_file.last_modification_time = scanned_file.last_modification_time
+        media_file.original_file_hash = scanned_file.hash if (scanned_file.hash != None) else MiscUtils.generate_hash(file_path)
+        media_file.converted_file_hash = None
         media_file.index_time = index_time
         ExifHelper.__append_dimentions(media_file, exif)
         media_file.capture_date = ExifHelper.__get_capture_date(scanned_file, exif)

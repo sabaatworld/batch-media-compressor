@@ -4,7 +4,7 @@ import time
 import math
 import os
 from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
-from pie.util import PyProcessPool
+from pie.util import PyProcessPool, MiscUtils
 from .index_db import IndexDB
 from typing import List
 from datetime import datetime
@@ -66,25 +66,24 @@ class MediaProcessor:
     @staticmethod
     def conversion_process_exec(media_file_path: str, target_gpu: int, save_file_path_computation_lock: Lock, indexDB: IndexDB, task_id: str):
         settings: Settings = indexDB.get_settings()
-        media_file = indexDB.get_by_file_path(media_file_path)
+        media_file: MediaFile = indexDB.get_by_file_path(media_file_path)
         processing_start_time = time.time()
         original_file_path = media_file.file_path
-        save_file_path_copy = "UNKNOWN"  # Creating a copy so that it can be used with exception logging below
+        save_file_path = "UNKNOWN"
         try:
             with save_file_path_computation_lock:
                 save_file_path = MediaProcessor.get_save_file_path(indexDB, media_file, settings)
-                save_file_path_copy = save_file_path
 
             skip_conversion: bool = False
             if (not media_file.capture_date and not settings.convert_unknown):  # No captureDate and conversion not requested for unknown
                 if os.path.exists(save_file_path):
                     os.remove(save_file_path)
-                    logging.info("Deleted Converted File %s: %s -> %s", task_id, original_file_path, save_file_path)
+                    logging.info("Deleted Previously Converted File %s: %s -> %s", task_id, original_file_path, save_file_path)
                 skip_conversion = True
             else:
                 os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
-                open(save_file_path, 'a').close()  # Append mode ensures that existing file is not emptied TODO move to lock block above
-                if (not settings.overwrite_output_files and os.path.exists(save_file_path) and os.path.getsize(save_file_path) > 0):
+                if (not settings.overwrite_output_files and os.path.exists(save_file_path)
+                    and media_file.converted_file_hash == MiscUtils.generate_hash(save_file_path)): # Converted file hash is None if the original file is re-indexed
                     skip_conversion = True
 
             if not skip_conversion:
@@ -93,12 +92,15 @@ class MediaProcessor:
                 if ScannedFileType.VIDEO.name == media_file.file_type:
                     MediaProcessor.convert_video_file(settings, media_file, original_file_path, save_file_path, target_gpu)
                 MediaProcessor.copy_exif_to_file(original_file_path, save_file_path, media_file.video_rotation)
+                media_file.converted_file_hash = MiscUtils.generate_hash(save_file_path)
+                with save_file_path_computation_lock:
+                    indexDB.insert_media_file(media_file)
                 logging.info("Converted %s: %s -> %s (%s%%) (%ss)", task_id, original_file_path, save_file_path,
                              round(os.path.getsize(save_file_path) / media_file.original_size * 100, 2), round(time.time() - processing_start_time, 2))
             else:
                 logging.info("Skipped Conversion %s: %s -> %s", task_id, original_file_path, save_file_path)
         except:
-            logging.exception("Failed Processing %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path_copy, round(time.time() - processing_start_time, 2))
+            logging.exception("Failed Processing %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path, round(time.time() - processing_start_time, 2))
 
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):
