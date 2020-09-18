@@ -67,6 +67,7 @@ class MediaProcessor:
     def conversion_process_exec(media_file_path: str, target_gpu: int, save_file_path_computation_lock: Lock, indexDB: IndexDB, task_id: str):
         settings: Settings = indexDB.get_settings()
         media_file: MediaFile = indexDB.get_by_file_path(media_file_path)
+        conversion_settings_hash: str = settings.generate_image_settings_hash() if(ScannedFileType.IMAGE.name == media_file.file_type) else settings.generate_video_settings_hash()
         processing_start_time = time.time()
         original_file_path = media_file.file_path
         save_file_path = "UNKNOWN"
@@ -83,7 +84,8 @@ class MediaProcessor:
             else:
                 os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
                 if (not settings.overwrite_output_files and os.path.exists(save_file_path)
-                    and media_file.converted_file_hash == MiscUtils.generate_hash(save_file_path)): # Converted file hash is None if the original file is re-indexed
+                    and media_file.converted_file_hash == MiscUtils.generate_hash(save_file_path) # Converted file hash is None if the original file is re-indexed
+                    and media_file.conversion_settings_hash == conversion_settings_hash): # Settings hash is None if the original file is re-indexed 
                     skip_conversion = True
 
             if not skip_conversion:
@@ -93,6 +95,7 @@ class MediaProcessor:
                     MediaProcessor.convert_video_file(settings, media_file, original_file_path, save_file_path, target_gpu)
                 MediaProcessor.copy_exif_to_file(original_file_path, save_file_path, media_file.video_rotation)
                 media_file.converted_file_hash = MiscUtils.generate_hash(save_file_path)
+                media_file.conversion_settings_hash = conversion_settings_hash
                 with save_file_path_computation_lock:
                     indexDB.insert_media_file(media_file)
                 logging.info("Converted %s: %s -> %s (%s%%) (%ss)", task_id, original_file_path, save_file_path,

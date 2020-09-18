@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List
 from pie.common import Base
 from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, Float
+import hashlib
 
 
 class ScannedFileType(Enum):
@@ -58,6 +59,7 @@ class MediaFile(Base):
     last_modification_time = Column(DateTime)
     original_file_hash = Column(String)
     converted_file_hash = Column(String)
+    conversion_settings_hash = Column(String)
     index_time = Column(DateTime)
     height = Column(Integer)
     width = Column(Integer)
@@ -99,6 +101,20 @@ class Settings(Base):
     video_crf: int = Column(Integer)
     video_nvenc_preset: str = Column(String)
     video_audio_bitrate: int = Column(Integer)
+
+    def generate_image_settings_hash(self):
+        hash = hashlib.sha1()
+        hash.update(self.image_compression_quality.to_bytes(64, byteorder='big'))
+        hash.update(self.image_max_dimension.to_bytes(64, byteorder='big'))
+        return hash.hexdigest()
+
+    def generate_video_settings_hash(self):
+        hash = hashlib.sha1()
+        hash.update(self.video_max_dimension.to_bytes(64, byteorder='big'))
+        hash.update(self.video_crf.to_bytes(64, byteorder='big'))
+        hash.update(str.encode(self.video_nvenc_preset))
+        hash.update(self.video_audio_bitrate.to_bytes(64, byteorder='big'))
+        return hash.hexdigest()
 
 
 class IndexingTask:
