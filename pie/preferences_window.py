@@ -96,7 +96,7 @@ class PreferencesWindow:
         self.window.hide()
 
     def btnPickMonitoredDir_click(self):
-        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor")
+        selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor"))
         if (selected_directory):
             self.settings.monitored_dir = selected_directory
             self.__indexDB.save_settings(self.settings)
@@ -107,7 +107,7 @@ class PreferencesWindow:
         self.btnDelDirToExclude.setEnabled(len(selected_items) > 0)
 
     def btnAddDirToExclude_click(self):
-        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick a directory to exclude")
+        selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick a directory to exclude"))
         current_dirs_to_exclude = json.loads(self.settings.dirs_to_exclude)
         if (selected_directory and not selected_directory in current_dirs_to_exclude):
             current_dirs_to_exclude.append(selected_directory)
@@ -126,14 +126,14 @@ class PreferencesWindow:
         self.__indexDB.save_settings(self.settings)
 
     def btnPickOutputDir_click(self):
-        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory")
+        selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory"))
         if (selected_directory):
             self.settings.output_dir = selected_directory
             self.__indexDB.save_settings(self.settings)
             self.txtOutputDir.setText(self.settings.output_dir)
 
     def btnPickUnknownOutputDir_click(self):
-        selected_directory = QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory")
+        selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory"))
         if (selected_directory):
             self.settings.unknown_output_dir = selected_directory
             self.__indexDB.save_settings(self.settings)

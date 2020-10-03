@@ -6,7 +6,7 @@ import os
 from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
 from pie.util import PyProcessPool, MiscUtils
 from .index_db import IndexDB
-from typing import List
+from typing import List, Set
 from datetime import datetime
 from multiprocessing import Queue, Event, Lock, Manager
 
@@ -19,11 +19,17 @@ class MediaProcessor:
         self.__log_queue = log_queue
         self.__indexing_stop_event = indexing_stop_event
 
-    def save_processed_files(self, indexDB: IndexDB):
+    def save_processed_files(self, indexDB: IndexDB, file_paths_to_process: [str] = None):
         MediaProcessor.__logger.info("BEGIN:: Media file conversion")
-        media_files = indexDB.get_all_media_file_ordered()
-        if (not media_files or media_files.count() == 0):
-            MediaProcessor.__logger.info("No media files found in IndexDB")
+        media_files_from_db = indexDB.get_all_media_file_ordered()
+        if file_paths_to_process != None:
+            file_path_set = set(file_paths_to_process)
+            media_files: List[MediaFile] = list(filter(lambda x: x.file_path in file_path_set, media_files_from_db))
+        else:
+            media_files: List[MediaFile] = list(media_files_from_db)
+
+        if (not media_files or len(media_files) == 0):
+            MediaProcessor.__logger.info("No media files to process")
         else:
             manager = Manager()
             save_file_path_computation_lock = manager.Lock()
@@ -188,7 +194,7 @@ class MediaProcessor:
             output_dir = settings.unknown_output_dir
 
         if output_dir_path_type == "Use Original Paths":
-            parent_dir_rel_path = os.path.relpath(media_file.parent_dir_path, settings.monitored_dir)
+            parent_dir_rel_path = os.path.relpath(media_file.parent_dir_path, settings.monitored_dir) if media_file.parent_dir_path != settings.monitored_dir else ''
             save_dir_path = os.path.join(output_dir, parent_dir_rel_path)
         elif output_dir_path_type == "Sort by Date":
             date_path = os.path.join(str(media_file.capture_date.year), str(media_file.capture_date.month), str(media_file.capture_date.day))
@@ -227,7 +233,7 @@ class MediaProcessor:
             # We know that there is atleast 1 file; but we would have applied the counter only if there were 2 or more
             if (len(files) > 1):
                 # TODO this will not work when path contains symbols like '.' , '_'. May also fail due to parallel processing. Best to use DB and find out a good filename.
-                next = int(files[0].rsplit(".")[0].rsplit("_")[1]) + 1
+                next = int(files[0].rsplit(".")[0].rsplit("_")[-1]) + 1
             else:
                 next = 1
             save_file_path = os.path.join(save_dir_path, file_name + "_" + format(next, '05d') + file_extension)

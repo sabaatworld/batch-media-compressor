@@ -14,7 +14,7 @@ class IndexDB:
 
     def __init__(self):
         # For in-memory, use: 'sqlite:///:memory:'
-        db_file = 'sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index.db")
+        db_file = 'sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index_test.db")
         self.__engine = create_engine(db_file, echo=False)
         Base.metadata.create_all(self.__engine)
         self.__session: Session = sessionmaker(bind=self.__engine)()

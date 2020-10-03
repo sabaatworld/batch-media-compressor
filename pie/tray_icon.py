@@ -5,6 +5,9 @@ from pie.domain import IndexingTask, Settings
 from .preferences_window import PreferencesWindow
 from PySide2 import QtCore, QtWidgets, QtGui
 from multiprocessing import Queue, Event, Manager
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler, FileSystemEvent, EVENT_TYPE_MOVED, FileSystemMovedEvent
+from typing import Set
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -15,6 +18,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.log_queue = log_queue
         self.preferences_window: PreferencesWindow = None
         self.indexing_stop_event: Event = None
+        self.changedFiles = None
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
 
@@ -23,6 +27,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
         tray_menu = QtWidgets.QMenu('Main Menu')
         self.startIndexAction = tray_menu.addAction('Start Indexing', self.startIndexAction_triggered)
+        self.startIndexChangedAction = tray_menu.addAction('Start Indexing Changed Files', self.startIndexChangedAction_triggered)
         self.stopIndexAction = tray_menu.addAction('Stop Indexing', self.stopIndexAction_triggered)
         self.stopIndexAction.setEnabled(False)
         self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
@@ -38,6 +43,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
     def startIndexAction_triggered(self):
         self.startIndexAction.setEnabled(False)
+        self.startIndexChangedAction.setEnabled(False)
         self.clearIndexAction.setEnabled(False)
         self.editPrefAction.setEnabled(False)
         if (self.preferences_window != None):
@@ -48,6 +54,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.indexing_worker.signals.finished.connect(self.indexing_finished)
         self.threadpool.start(self.indexing_worker)
         self.stopIndexAction.setEnabled(True)
+
+    def startIndexChangedAction_triggered(self):
+        self.changedFiles: Set[str] = self.watchdogEventsHandler.get_changed_files()
+        self.startIndexAction_triggered()
 
     def stopIndexAction_triggered(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
@@ -87,22 +97,30 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             misc_utils = MiscUtils(indexing_task)
             misc_utils.create_root_marker()
             indexing_helper = IndexingHelper(indexing_task, self.log_queue, self.indexing_stop_event)
-            scanned_files = indexing_helper.scan_dirs()
-            indexing_helper.remove_slate_files(indexDB, scanned_files)
+            (scanned_files, deleted_files) = indexing_helper.scan_dirs() if self.changedFiles == None else indexing_helper.scan_files(self.changedFiles)
+            if self.changedFiles == None:
+                indexing_helper.remove_slate_files(indexDB, scanned_files)
+            else:
+                indexing_helper.remove_deleted_files(indexDB, deleted_files)
             indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
             if (not self.indexing_stop_event.is_set()):
-                indexing_helper.create_media_files(scanned_files)
+                saved_file_paths = indexing_helper.create_media_files(scanned_files)
             if (not self.indexing_stop_event.is_set()):
                 media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
-                media_processor.save_processed_files(indexDB)
+                if self.changedFiles == None:
+                    media_processor.save_processed_files(indexDB)
+                else:
+                    media_processor.save_processed_files(indexDB, saved_file_paths)
             if (not self.indexing_stop_event.is_set()):
                 misc_utils.cleanEmptyOutputDirs()
 
     def indexing_finished(self):
         self.startIndexAction.setEnabled(True)
+        self.startIndexChangedAction.setEnabled(True)
         self.stopIndexAction.setEnabled(False)
         self.clearIndexAction.setEnabled(True)
         self.editPrefAction.setEnabled(True)
+        self.changedFiles = None
 
     def indexing_progress(self, progress):
         print("%d%% done" % progress)
@@ -114,3 +132,29 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def cleanup(self):
         if (not self.preferences_window == None):
             self.preferences_window.cleanup()
+    
+    def start_watching(self):
+        self.watchdogEventsHandler = WatchdogEventsHandler()
+        self.observer = Observer()
+        self.observer.schedule(self.watchdogEventsHandler, r'D:\PC-Backup\Desktop\PIE-Data\PIE Input', recursive=True)
+        self.observer.start()
+
+    def stop_watching(self):
+        self.observer.stop()
+
+class WatchdogEventsHandler(FileSystemEventHandler):
+
+    def __init__(self):
+        self.__changedFiles: Set[str] = set()
+
+    def on_any_event(self, event: FileSystemEvent):
+        if not event.is_directory:
+            self.__changedFiles.add(event.src_path)
+            if event.event_type == EVENT_TYPE_MOVED:
+                move_event: FileSystemMovedEvent = event
+                self.__changedFiles.add(move_event._dest_path)
+
+    def get_changed_files(self) -> Set[str]:
+        changedFilesCopy = set(self.__changedFiles)
+        self.__changedFiles.clear()
+        return changedFilesCopy
