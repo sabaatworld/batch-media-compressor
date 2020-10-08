@@ -547,7 +547,7 @@
       <x>660</x>
       <y>250</y>
       <width>320</width>
-      <height>230</height>
+      <height>151</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -562,7 +562,7 @@
        <x>10</x>
        <y>40</y>
        <width>301</width>
-       <height>191</height>
+       <height>111</height>
       </rect>
      </property>
      <layout class="QFormLayout" name="formLayout_4">
@@ -690,7 +690,7 @@
      <rect>
       <x>10</x>
       <y>410</y>
-      <width>641</width>
+      <width>971</width>
       <height>71</height>
      </rect>
     </property>
@@ -702,7 +702,7 @@
       <rect>
        <x>9</x>
        <y>-1</y>
-       <width>621</width>
+       <width>951</width>
        <height>71</height>
       </rect>
      </property>
@@ -711,6 +711,13 @@
        <widget class="QCheckBox" name="chkSkipSameNameRaw">
         <property name="text">
          <string>Skip RAW File with Same Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="chkOverwriteFiles">
+        <property name="text">
+         <string>Overwrite Converted Files</string>
         </property>
        </widget>
       </item>
@@ -728,10 +735,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="chkOverwriteFiles">
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="chkProcessChanged">
         <property name="text">
-         <string>Overwrite Converted Files</string>
+         <string>Process Changed Media when Idle</string>
         </property>
        </widget>
       </item>

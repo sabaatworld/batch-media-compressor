@@ -19,6 +19,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.preferences_window: PreferencesWindow = None
         self.indexing_stop_event: Event = None
         self.changedFiles = None
+        self.observer = None
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
 
@@ -37,6 +38,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         tray_menu.addSeparator()
         tray_menu.addAction('Quit', self.quitMenuAction_triggered)
         self.setContextMenu(tray_menu)
+
+        self.apply_process_changed_setting()
 
     def trayIcon_activated(self, reason):
         pass
@@ -83,7 +86,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
     def editPreferencesAction_triggered(self):
         if (self.preferences_window == None):
-            self.preferences_window = PreferencesWindow(self.log_queue)
+            self.preferences_window = PreferencesWindow(self.log_queue, self.apply_process_changed_setting)
         self.preferences_window.show()
 
     def quitMenuAction_triggered(self):
@@ -130,17 +133,31 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.indexing_stop_event.set()
 
     def cleanup(self):
+        self.stop_watching_changed_files()
         if (not self.preferences_window == None):
             self.preferences_window.cleanup()
-    
-    def start_watching(self):
-        self.watchdogEventsHandler = WatchdogEventsHandler()
-        self.observer = Observer()
-        self.observer.schedule(self.watchdogEventsHandler, r'D:\PC-Backup\Desktop\PIE-Data\PIE Input', recursive=True)
-        self.observer.start()
 
-    def stop_watching(self):
-        self.observer.stop()
+    def start_watching_changed_files(self, settings: Settings):
+        if self.observer == None:
+            self.__logger.info("Starting changed file watcher")
+            self.watchdogEventsHandler = WatchdogEventsHandler()
+            self.observer = Observer()
+            self.observer.schedule(self.watchdogEventsHandler, settings.monitored_dir, recursive=True)
+            self.observer.start()
+    
+    def stop_watching_changed_files(self):
+        if self.observer != None:
+            self.__logger.info("Stopping changed file watcher")
+            self.observer.stop()
+            self.observer = None
+
+    def apply_process_changed_setting(self):
+        with IndexDB() as indexDB:
+            settings = indexDB.get_settings()
+            if settings.process_changed:
+                self.start_watching_changed_files(settings)
+            else:
+                self.stop_watching_changed_files()
 
 class WatchdogEventsHandler(FileSystemEventHandler):
 

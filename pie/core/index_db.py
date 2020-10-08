@@ -93,6 +93,9 @@ class IndexDB:
         if (settings.overwrite_output_files == None):
             settings.overwrite_output_files = False
             save_record = True
+        if (settings.process_changed == None):
+            settings.process_changed = False
+            save_record = True
         if (settings.indexing_workers == None):
             settings.indexing_workers = MiscUtils.get_default_worker_count()
             save_record = True

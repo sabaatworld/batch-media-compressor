@@ -26,11 +26,9 @@ if __name__ == "__main__":
 
     tray_icon = TrayIcon(APP_ICON_FILE_PATH, log_queue)
     tray_icon.show()
-    tray_icon.start_watching()
     return_code = app.exec_()
-    tray_icon.stop_watching()
 
-    # tray_icon.cleanup()
+    tray_icon.cleanup()
     logging.info("Application is being shutdown")
     log_queue.put(None)
     logging.debug("Waiting for logging thread to terminate")
