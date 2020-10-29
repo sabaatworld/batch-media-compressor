@@ -31,8 +31,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.startIndexChangedAction = tray_menu.addAction('Start Indexing Changed Files', self.startIndexChangedAction_triggered)
         self.stopIndexAction = tray_menu.addAction('Stop Indexing', self.stopIndexAction_triggered)
         self.stopIndexAction.setEnabled(False)
+        tray_menu.addSeparator()
         self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
-
+        self.clearOutputDirsAction = tray_menu.addAction('Clear Ouput Directories', self.clearOutputDirsAction_triggered)
         tray_menu.addSeparator()
         self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
         tray_menu.addSeparator()
@@ -45,17 +46,12 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         pass
 
     def startIndexAction_triggered(self):
-        self.startIndexAction.setEnabled(False)
-        self.startIndexChangedAction.setEnabled(False)
-        self.clearIndexAction.setEnabled(False)
-        self.editPrefAction.setEnabled(False)
-        if (self.preferences_window != None):
-            self.preferences_window.hide()
+        self.background_processing_started()
         self.indexing_stop_event = Event()
-        self.indexing_worker = QWorker(self.start_indexing)
-        self.indexing_worker.signals.progress.connect(self.indexing_progress)
-        self.indexing_worker.signals.finished.connect(self.indexing_finished)
-        self.threadpool.start(self.indexing_worker)
+        self.deletion_worker = QWorker(self.start_indexing)
+        self.deletion_worker.signals.progress.connect(self.indexing_progress)
+        self.deletion_worker.signals.finished.connect(self.background_processing_finished)
+        self.threadpool.start(self.deletion_worker)
         self.stopIndexAction.setEnabled(True)
 
     def startIndexChangedAction_triggered(self):
@@ -73,15 +69,34 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
     def clearIndexAction_triggered(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
-            None, "Confirm Action", "Clear indexed files from IndexDB and delete all output files?",
+            None, "Confirm Action", "Forget indexed files and delete all output files?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
         if (QtWidgets.QMessageBox.Yes == response):
-            with IndexDB() as indexDB:
+            self.background_processing_started()
+            self.deletion_worker = QWorker(self.start_deletion, True)
+            self.deletion_worker.signals.finished.connect(self.background_processing_finished)
+            self.threadpool.start(self.deletion_worker)
+
+    def clearOutputDirsAction_triggered(self):
+        response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
+            None, "Confirm Action", "Delete all output files?",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+        )
+        if (QtWidgets.QMessageBox.Yes == response):
+            self.background_processing_started()
+            self.deletion_worker = QWorker(self.start_deletion, False)
+            self.deletion_worker.signals.finished.connect(self.background_processing_finished)
+            self.threadpool.start(self.deletion_worker)
+
+    def start_deletion(self, clearIndex: bool, progress_callback):
+        with IndexDB() as indexDB:
+            if clearIndex:
                 indexDB.clear_indexed_files()
-                settings: Settings = indexDB.get_settings()
-                MiscUtils.recursively_delete_children(settings.output_dir)
-                MiscUtils.recursively_delete_children(settings.unknown_output_dir)
+                self.__logger.info("Index cleared")
+            settings: Settings = indexDB.get_settings()
+            MiscUtils.recursively_delete_children(settings.output_dir)
+            MiscUtils.recursively_delete_children(settings.unknown_output_dir)
             self.__logger.info("Output directories cleared")
 
     def editPreferencesAction_triggered(self):
@@ -117,11 +132,21 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             if (not self.indexing_stop_event.is_set()):
                 misc_utils.cleanEmptyOutputDirs()
 
-    def indexing_finished(self):
+    def background_processing_started(self):
+        self.startIndexAction.setEnabled(False)
+        self.startIndexChangedAction.setEnabled(False)
+        self.clearIndexAction.setEnabled(False)
+        self.clearOutputDirsAction.setEnabled(False)
+        self.editPrefAction.setEnabled(False)
+        if (self.preferences_window != None):
+            self.preferences_window.hide()
+
+    def background_processing_finished(self):
         self.startIndexAction.setEnabled(True)
         self.startIndexChangedAction.setEnabled(True)
         self.stopIndexAction.setEnabled(False)
         self.clearIndexAction.setEnabled(True)
+        self.clearOutputDirsAction.setEnabled(True)
         self.editPrefAction.setEnabled(True)
         self.changedFiles = None
 
@@ -144,7 +169,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.observer = Observer()
             self.observer.schedule(self.watchdogEventsHandler, settings.monitored_dir, recursive=True)
             self.observer.start()
-    
+
     def stop_watching_changed_files(self):
         if self.observer != None:
             self.__logger.info("Stopping changed file watcher")
@@ -158,6 +183,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
                 self.start_watching_changed_files(settings)
             else:
                 self.stop_watching_changed_files()
+
 
 class WatchdogEventsHandler(FileSystemEventHandler):
 
