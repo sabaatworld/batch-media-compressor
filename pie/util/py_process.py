@@ -1,9 +1,9 @@
-import time
 import logging
-from multiprocessing import Process, Queue, Event, JoinableQueue
-from typing import Callable, List
-from pie.util import MiscUtils
 from logging import Logger
+from multiprocessing import Event, JoinableQueue, Process, Queue
+from typing import Callable, List
+
+from pie.util import MiscUtils
 
 
 class PyProcessPool():
@@ -62,7 +62,7 @@ class PyProcess(Process):
 
     def run(self):
         MiscUtils.configure_worker_logger(self.__log_queue)
-        if (self.__initializer):
+        if self.__initializer:
             initialization_result = self.__initializer(*self.__initializer_args)
         else:
             initialization_result = None
@@ -74,17 +74,17 @@ class PyProcess(Process):
                 self.__logger.debug("Poison pill received")
                 self.__task_queue.task_done()
                 break
-            if (self.__stop_event == None or not self.__stop_event.is_set()):
+            if (self.__stop_event is None or not self.__stop_event.is_set()):
                 try:
                     args = next_task[0]
                     task_id = next_task[1]
                     result = self.__target(*args, initialization_result, task_id)
-                    if (result and self.__result_queue != None):
+                    if (result and self.__result_queue is not None):
                         self.__result_queue.put(result)
                 except:
                     self.__logger.exception("Uncaught exception while executing target")
             self.__task_queue.task_done()
         self.__logger.debug("Exited task execution loop")
 
-        if (self.__terminator):
+        if self.__terminator:
             self.__terminator(*self.__terminator_args, initialization_result)

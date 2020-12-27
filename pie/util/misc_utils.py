@@ -1,12 +1,13 @@
-import logging
-import os
-import sys
-import shutil
-import multiprocessing
 import hashlib
-from pie.domain import IndexingTask
-from logging.handlers import TimedRotatingFileHandler, QueueHandler
+import logging
+import multiprocessing
+import os
+import shutil
+import sys
+from logging.handlers import QueueHandler, TimedRotatingFileHandler
 from multiprocessing import Queue
+
+from pie.domain import IndexingTask
 
 
 class MiscUtils:
@@ -98,9 +99,9 @@ class MiscUtils:
 
         # remove empty subfolders
         files = os.listdir(path)
-        if len(files):
-            for f in files:
-                fullpath = os.path.join(path, f)
+        if files is not None:
+            for file in files:
+                fullpath = os.path.join(path, file)
                 if os.path.isdir(fullpath):
                     MiscUtils.cleanEmptyDirs(fullpath)
 

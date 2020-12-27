@@ -1,9 +1,10 @@
-from enum import Enum
-from datetime import datetime
-from typing import List
-from pie.common import Base
-from sqlalchemy import Column, Integer, String, Boolean, ARRAY, DateTime, Float
 import hashlib
+from datetime import datetime
+from enum import Enum
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
+
+from pie.common import Base
 
 
 class ScannedFileType(Enum):
@@ -33,7 +34,7 @@ class ScannedFileType(Enum):
 class ScannedFile:
 
     def __init__(self, parent_dir_path, file_path, extension, file_type, is_raw, creation_time, last_modification_time, hash,
-                 already_indexed=False, index_id=None, needs_reindex=False):
+                 already_indexed=False, needs_reindex=False):
         self.parent_dir_path = parent_dir_path
         self.file_path = file_path
         self.extension = extension

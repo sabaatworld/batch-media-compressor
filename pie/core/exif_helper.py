@@ -1,13 +1,15 @@
 import logging
-import os
-import pyexifinfo
 import mimetypes
+import os
 import re
-from pie.domain import MediaFile, ScannedFile, ScannedFileType
-from pie.util import MiscUtils
 from datetime import datetime
+
+import pyexifinfo
 from dateutil.parser import parse
 from dateutil.tz import UTC
+
+from pie.domain import MediaFile, ScannedFile, ScannedFileType
+from pie.util import MiscUtils
 
 
 class ExifHelper:
@@ -19,11 +21,11 @@ class ExifHelper:
         exif = ExifHelper.__get_exif_dict(file_path)
         error_str = ExifHelper.__get_exif(exif, "Error")
         exif_file_type_str = ExifHelper.__get_exif(exif, "FileType")
-        if (error_str):
+        if error_str:
             ExifHelper.__logger.error("Error processing file. EXIF: %s", exif)
-            if ('File is empty' == error_str or 'File format error' == error_str or 'file is binary' in error_str):
+            if error_str == 'File is empty'  or error_str == 'File format error' or 'file is binary' in error_str:
                 return None
-        if ("TXT" == exif_file_type_str):
+        if exif_file_type_str == "TXT":
             ExifHelper.__logger.error("Possibly corrupt file. EXIF: %s", exif)
             return None
         media_file = existing_media_file if existing_media_file else MediaFile()
@@ -36,7 +38,7 @@ class ExifHelper:
         media_file.original_size = os.path.getsize(file_path)
         media_file.creation_time = scanned_file.creation_time
         media_file.last_modification_time = scanned_file.last_modification_time
-        media_file.original_file_hash = scanned_file.hash if (scanned_file.hash != None) else MiscUtils.generate_hash(file_path)
+        media_file.original_file_hash = scanned_file.hash if (scanned_file.hash is not None) else MiscUtils.generate_hash(file_path)
         media_file.converted_file_hash = None
         media_file.conversion_settings_hash = None
         media_file.index_time = index_time
@@ -69,7 +71,7 @@ class ExifHelper:
     @staticmethod
     def __get_mime(file_path: str, exif: dict):
         exif_mime = ExifHelper.__get_exif(exif, "MIMEType")
-        if (exif_mime):
+        if exif_mime:
             return exif_mime
         else:
             mime_type = mimetypes.guess_type(file_path, False)
@@ -79,17 +81,17 @@ class ExifHelper:
     def __get_capture_date(scanned_file: ScannedFile, exif: dict):
         # Candidates: "GPSDateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "CreationDate"
         date_str = None
-        if (scanned_file.file_type == ScannedFileType.IMAGE):
+        if scanned_file.file_type == ScannedFileType.IMAGE:
             date_str = ExifHelper.__get_exif(exif, "DateTimeOriginal")
-        if (scanned_file.file_type == ScannedFileType.VIDEO):
+        if scanned_file.file_type == ScannedFileType.VIDEO:
             date_str = ExifHelper.__get_exif(exif, "MediaCreateDate", "TrackCreateDate")
-        if (date_str and not re.search(": +:|0000:00:00 00:00:00", date_str)):
+        if date_str and not re.search(": +:|0000:00:00 00:00:00", date_str):
             # Possible formats are yyyy:MM:dd HH:mm / yyyy.MM.dd HH:mm:ss / iPhoneImage: yyyy.MM.dd HH:mm:ss.FFF / iPhone 5: yyyy.MM.dd HH:mm:ss.XXZ
             # iPhoneVideo: yyyy.MM.dd HH:mm:sszzz, etc. To work with the automatic parser, we modify the date part a bit.
             date_str_parts = date_str.split(" ")
-            if (len(date_str_parts) > 1):
+            if len(date_str_parts) > 1:
                 date_str_parts[0] = date_str_parts[0].replace(':', ".")
-                if (re.match(r"^.+\.\d{1,2}Z$", date_str_parts[1])):  # Removing XX from yyyy.MM.dd HH:mm:ss.XXZ
+                if re.match(r"^.+\.\d{1,2}Z$", date_str_parts[1]):  # Removing XX from yyyy.MM.dd HH:mm:ss.XXZ
                     time_str_parts = re.split(r"\.", date_str_parts[1])
                     date_str_parts[1] = time_str_parts[0] + "Z"
             date_str = " ".join(date_str_parts)
@@ -99,7 +101,7 @@ class ExifHelper:
     @staticmethod
     def __append_dimentions(media_file: MediaFile, exif: dict):
         default_crop_size_str = ExifHelper.__get_exif(exif, "DefaultCropSize")
-        if (default_crop_size_str):
+        if default_crop_size_str:
             default_crop_size_str_parts = default_crop_size_str.split(" ")
             width = default_crop_size_str_parts[0]
             height = default_crop_size_str_parts[1]
@@ -113,7 +115,7 @@ class ExifHelper:
     def __get_gps_info(exif: dict):
         gps_info = {}
         altitude_str = ExifHelper.__get_exif(exif, "GPSAltitude")
-        if (altitude_str):
+        if altitude_str:
             altitude = float(altitude_str.split(" ")[0])
             altitude_ref_str = ExifHelper.__get_exif(exif, "GPSAltitudeRef")
             below_sea_level = "Below Sea Level"  # "Above Sea Level" is not used for anything yet
@@ -129,16 +131,16 @@ class ExifHelper:
 
     @staticmethod
     def __gps_coordinate_str_to_float(coordinate_str: str):
-        if (coordinate_str):
+        if coordinate_str:
             # Expects string to be in a format like 77 33 25.070000 or 77 33 25.070000 N or 47 deg 36' 27.90" N
             coordinate_str_parts = re.sub("deg |'|\"", "", coordinate_str).split(" ")
             degrees = float(coordinate_str_parts[0])
             minutes = float(coordinate_str_parts[1])
             seconds = float(coordinate_str_parts[2])
             float_value = (degrees + (minutes / 60) + (seconds / 3600))
-            if (len(coordinate_str_parts) == 4):
+            if len(coordinate_str_parts) == 4:
                 # This means direction is also present. Exceptions are possible due to software issues.
-                if ("S" == coordinate_str_parts[3] or "W" == coordinate_str_parts[3]):
+                if coordinate_str_parts[3] == "S" or coordinate_str_parts[3] == "W":
                     float_value = float_value * -1
             return float_value
         return None
@@ -165,11 +167,11 @@ class ExifHelper:
     def __get_video_duration(exif: dict):
         video_duration_str = ExifHelper.__get_exif(exif, "Duration", "MediaDuration", "TrackDuration")
 
-        if (video_duration_str):
-            if (re.match(r"^\d{1,2}:\d{2}:\d{2}$", video_duration_str)):  # 0:00:46
+        if video_duration_str:
+            if re.match(r"^\d{1,2}:\d{2}:\d{2}$", video_duration_str):  # 0:00:46
                 duration_parts = video_duration_str.split(":")
                 return ((int(duration_parts[0]) * 60 * 60) + (int(duration_parts[1]) * 60) + int(duration_parts[2])) * 1000
-            elif (re.match(r"^\d{1,2}\.\d{1,3} s$", video_duration_str)):  # 14.44 s
+            elif re.match(r"^\d{1,2}\.\d{1,3} s$", video_duration_str):  # 14.44 s
                 duration_parts = re.split(r"\.| ", video_duration_str)
                 return (int(duration_parts[0]) * 1000) + int(duration_parts[1])
             else:

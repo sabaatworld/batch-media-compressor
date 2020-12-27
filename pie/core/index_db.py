@@ -1,12 +1,14 @@
 import logging
 import os
+from logging import Logger
+from typing import Dict, List
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from pie.common import Base
 from pie.domain import MediaFile, Settings
 from pie.util import MiscUtils
-from pie.common import Base
-from sqlalchemy import create_engine, inspect
-from sqlalchemy.orm import sessionmaker, scoped_session, Session
-from logging import Logger
-from typing import List, Dict
 
 
 class IndexDB:
@@ -67,64 +69,64 @@ class IndexDB:
         session = self.__session
         save_record = False
         settings = session.query(Settings).filter_by(id='app_settings').first()
-        if (not settings):
+        if not settings:
             settings = Settings(id='app_settings')
             save_record = True
 
         # Apply defaults if they are not already set
-        if (settings.dirs_to_exclude == None):
+        if settings.dirs_to_exclude is None:
             settings.dirs_to_exclude = '[]'
             save_record = True
-        if (settings.output_dir_path_type == None):
+        if settings.output_dir_path_type is None:
             settings.output_dir_path_type = "Use Original Paths"
             save_record = True
-        if (settings.unknown_output_dir_path_type == None):
+        if settings.unknown_output_dir_path_type is None:
             settings.unknown_output_dir_path_type = "Use Original Paths"
             save_record = True
-        if (settings.skip_same_name_video == None):
+        if settings.skip_same_name_video is None:
             settings.skip_same_name_video = True
             save_record = True
-        if (settings.skip_same_name_raw == None):
+        if settings.skip_same_name_raw is None:
             settings.skip_same_name_raw = True
             save_record = True
-        if (settings.convert_unknown == None):
+        if settings.convert_unknown is None:
             settings.convert_unknown = False
             save_record = True
-        if (settings.overwrite_output_files == None):
+        if settings.overwrite_output_files is None:
             settings.overwrite_output_files = False
             save_record = True
-        if (settings.indexing_workers == None):
+        if settings.indexing_workers is None:
             settings.indexing_workers = MiscUtils.get_default_worker_count()
             save_record = True
-        if (settings.conversion_workers == None):
+        if settings.conversion_workers is None:
             settings.conversion_workers = MiscUtils.get_default_worker_count()
             save_record = True
-        if (settings.gpu_workers == None):
+        if settings.gpu_workers is None:
             settings.gpu_workers = 1
             save_record = True
-        if (settings.gpu_count == None):
+        if settings.gpu_count is None:
             settings.gpu_count = 0
             save_record = True
-        if (settings.image_compression_quality == None):
+        if settings.image_compression_quality is None:
             settings.image_compression_quality = 75
             save_record = True
-        if (settings.image_max_dimension == None):
+        if settings.image_max_dimension is None:
             settings.image_max_dimension = 1920
             save_record = True
-        if (settings.video_max_dimension == None):
+        if settings.video_max_dimension is None:
             settings.video_max_dimension = 1920
             save_record = True
-        if (settings.video_crf == None):
+        if settings.video_crf is None:
             settings.video_crf = 28
             save_record = True
-        if (settings.video_nvenc_preset == None):
+        if settings.video_nvenc_preset is None:
             settings.video_nvenc_preset = "fast"
             save_record = True
-        if (settings.video_audio_bitrate == None):
+        if settings.video_audio_bitrate is None:
             settings.video_audio_bitrate = 128
             save_record = True
 
-        if (save_record):
+        if save_record:
             session.add(settings)
             session.commit()
 

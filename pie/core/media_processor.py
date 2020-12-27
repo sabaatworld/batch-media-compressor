@@ -1,28 +1,30 @@
 import logging
-import subprocess
-import time
 import math
 import os
-from pie.domain import ScannedFileType, MediaFile, IndexingTask, Settings
-from pie.util import PyProcessPool, MiscUtils
-from .index_db import IndexDB
-from typing import List, Set
+import subprocess
+import time
 from datetime import datetime
-from multiprocessing import Queue, Event, Lock, Manager
+from multiprocessing import Event, Lock, Manager, Queue
+from typing import List
+
+from pie.domain import IndexingTask, MediaFile, ScannedFileType, Settings
+from pie.util import MiscUtils, PyProcessPool
+
+from .index_db import IndexDB
 
 
 class MediaProcessor:
     __logger = logging.getLogger('MediaProcessor')
 
-    def __init__(self, indexing_task: IndexingTask, log_queue: Queue,  indexing_stop_event: Event):
+    def __init__(self, indexing_task: IndexingTask, log_queue: Queue, indexing_stop_event: Event):
         self.__indexing_task = indexing_task
         self.__log_queue = log_queue
         self.__indexing_stop_event = indexing_stop_event
 
-    def save_processed_files(self, indexDB: IndexDB, file_paths_to_process: [str] = None):
+    def save_processed_files(self, indexDB: IndexDB, file_paths_to_process: List[str] = None):
         MediaProcessor.__logger.info("BEGIN:: Media file conversion")
         media_files_from_db = indexDB.get_all_media_file_ordered()
-        if file_paths_to_process != None:
+        if file_paths_to_process is not None:
             file_path_set = set(file_paths_to_process)
             media_files: List[MediaFile] = list(filter(lambda x: x.file_path in file_path_set, media_files_from_db))
         else:
@@ -32,18 +34,18 @@ class MediaProcessor:
             MediaProcessor.__logger.info("No media files to process")
         else:
             manager = Manager()
-            save_file_path_computation_lock = manager.Lock()
+            save_file_path_computation_lock = manager.Lock() # pylint: disable=maybe-no-member
 
-            if (self.__indexing_task.settings.gpu_count == 0):
+            if self.__indexing_task.settings.gpu_count == 0:
                 self.start_cpu_pool(save_file_path_computation_lock, media_files).wait_and_get_results()
             else:
                 image_media_files = []
                 video_media_files = []
                 for media_file in media_files:
                     media_file: MediaFile = media_file
-                    if (media_file.file_type == ScannedFileType.IMAGE.name):
+                    if media_file.file_type == ScannedFileType.IMAGE.name:
                         image_media_files.append(media_file)
-                    if (media_file.file_type == ScannedFileType.VIDEO.name):
+                    if media_file.file_type == ScannedFileType.VIDEO.name:
                         video_media_files.append(media_file)
                 cpu_pool = self.start_cpu_pool(save_file_path_computation_lock, image_media_files)
                 gpu_pool = self.start_gpu_pool(save_file_path_computation_lock, video_media_files)
@@ -90,8 +92,8 @@ class MediaProcessor:
             else:
                 os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
                 if (not settings.overwrite_output_files and os.path.exists(save_file_path)
-                    and media_file.converted_file_hash == MiscUtils.generate_hash(save_file_path) # Converted file hash is None if the original file is re-indexed
-                    and media_file.conversion_settings_hash == conversion_settings_hash): # Settings hash is None if the original file is re-indexed 
+                        and media_file.converted_file_hash == MiscUtils.generate_hash(save_file_path)  # Converted file hash is None if the original file is re-indexed
+                        and media_file.conversion_settings_hash == conversion_settings_hash):  # Settings hash is None if the original file is re-indexed
                     skip_conversion = True
 
             if not skip_conversion:
@@ -117,7 +119,7 @@ class MediaProcessor:
         args = ["magick", "convert", "-quality", str(settings.image_compression_quality), original_file_path, save_file_path]
 
         new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
-        if (new_dimentions):
+        if new_dimentions:
             args.insert(2, "-resize")
             args.insert(3, "{}x{}".format(new_dimentions['height'], new_dimentions['width']))
         MediaProcessor.exec_subprocess(args, "Image conversion failed")
@@ -128,19 +130,19 @@ class MediaProcessor:
         audio_bitrate_arg = str(settings.video_audio_bitrate) + "k"
 
         # Adding ability to play converted videos in QuickTime: https://brandur.org/fragments/ffmpeg-h265
-        if (target_gpu < 0):
+        if target_gpu < 0:
             # CPU Sample: ffmpeg -noautorotate -i input -c:v libx265 -crf 28 -tag:v hvc1 -c:a aac -ac 2 -vf scale=320:240 -b:a 128k -y output.mp4
-            args = ["ffmpeg", "-noautorotate",  "-i", original_file_path, "-c:v", "libx265",  "-crf", str(settings.video_crf),
-                    "-tag:v", "hvc1", "-c:a",  "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-y", new_file_path]
-            if (new_dimentions):
+            args = ["ffmpeg", "-noautorotate", "-i", original_file_path, "-c:v", "libx265", "-crf", str(settings.video_crf),
+                    "-tag:v", "hvc1", "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-y", new_file_path]
+            if new_dimentions:
                 args.insert(14, "-vf")
                 args.insert(15, "scale={}:{}".format(new_dimentions['width'], new_dimentions['height']))
         else:
             # GPU Sample: ffmpeg -noautorotate -hwaccel nvdec -hwaccel_device 0 -i input -c:v hevc_nvenc -preset fast -gpu 0 -c:a aac -ac 2 -b:a 128k -tag:v hvc1 -vf "hwupload_cuda,scale_npp=w=1920:h=1080:format=yuv420p" -y output.mp4
-            args = ["ffmpeg", "-noautorotate",  "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i",  original_file_path,
-                    "-c:v", "hevc_nvenc",  "-preset", settings.video_nvenc_preset, "-gpu", str(target_gpu),
-                    "-c:a",  "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-tag:v", "hvc1", "-y", new_file_path]
-            if (new_dimentions):
+            args = ["ffmpeg", "-noautorotate", "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i", original_file_path,
+                    "-c:v", "hevc_nvenc", "-preset", settings.video_nvenc_preset, "-gpu", str(target_gpu),
+                    "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-tag:v", "hvc1", "-y", new_file_path]
+            if new_dimentions:
                 args.insert(22, "-vf")
                 args.insert(23, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
         MediaProcessor.exec_subprocess(args, "Video conversion failed")
@@ -148,21 +150,21 @@ class MediaProcessor:
     @staticmethod
     def copy_exif_to_file(original_file_path: str, new_file_path: str, rotation: str):
         args = ["exiftool", "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
-        if (rotation):
+        if rotation:
             args.insert(4, "-rotation={}".format(rotation))
         MediaProcessor.exec_subprocess(args, "EXIF copy failed")
 
     @staticmethod
     def exec_subprocess(popenargs: List[str], errorMsg: str):
         results = subprocess.run(popenargs, capture_output=True)
-        if (results.returncode != 0):
+        if results.returncode != 0:
             raise RuntimeError("{}: CommandLine: {}, Output: {}".format(errorMsg, subprocess.list2cmdline(popenargs), str(results.stderr)))
 
     @staticmethod
     def get_new_dimentions(original_height: int, original_width: int, max_dimention: int):
-        if (max(original_height, original_width) <= max_dimention):
+        if max(original_height, original_width) <= max_dimention:
             return None
-        if (original_height > original_width):
+        if original_height > original_width:
             new_height = max_dimention
             new_width = (new_height * original_width) / original_height
         else:
@@ -174,7 +176,7 @@ class MediaProcessor:
     def get_save_file_path(indexDB: IndexDB, media_file: MediaFile, settings: Settings):
         capture_date: datetime = media_file.capture_date
         out_dir = settings.output_dir if capture_date else settings.unknown_output_dir
-        if (media_file.output_rel_file_path):
+        if media_file.output_rel_file_path:
             return os.path.join(out_dir, media_file.output_rel_file_path)
 
         save_dir_path = MediaProcessor.get_save_dir_path(media_file, settings)
@@ -226,12 +228,12 @@ class MediaProcessor:
             raise RuntimeError("Output file path type '{}' is not supported", output_dir_path_type)
 
         ideal_save_path = os.path.join(save_dir_path, file_name + file_extension)
-        if (not os.path.isfile(ideal_save_path)):
+        if not os.path.isfile(ideal_save_path):
             save_file_path = ideal_save_path
         else:
             files = sorted(filter(lambda k: k.startswith(file_name) and k.endswith(file_extension), os.listdir(save_dir_path)), reverse=True)
             # We know that there is atleast 1 file; but we would have applied the counter only if there were 2 or more
-            if (len(files) > 1):
+            if len(files) > 1:
                 # TODO this will not work when path contains symbols like '.' , '_'. May also fail due to parallel processing. Best to use DB and find out a good filename.
                 next = int(files[0].rsplit(".")[0].rsplit("_")[-1]) + 1
             else:

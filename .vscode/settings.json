@@ -2,12 +2,15 @@
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "python.linting.pylintArgs": [
-        // "--load-plugins=pylint_django"
+        // "--load-plugins=pylint_django,"
+        "--enable=W0614",
+        "--disable=W0702,C0111",
+        "--extension-pkg-whitelist=PySide2"
     ],
     "git.ignoreLimitWarning": true,
     "python.formatting.provider": "autopep8",
     "python.formatting.autopep8Args": [
         "--max-line-length=200"
     ],
-    "python.pythonPath": ".venv/bin/python"
+    "python.pythonPath": ".venv/bin/python",
 }

@@ -1,10 +1,11 @@
-import logging
 import json
-from typing import Callable
-from pie.core import IndexDB
-from pie.domain import Settings
-from PySide2 import QtCore, QtWidgets, QtUiTools
+import logging
 from multiprocessing import Queue
+from typing import Callable
+
+from PySide2 import QtCore, QtUiTools, QtWidgets
+
+from pie.core import IndexDB
 
 
 class PreferencesWindow:
@@ -96,7 +97,7 @@ class PreferencesWindow:
 
     def btnPickMonitoredDir_click(self):
         selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick directory to monitor"))
-        if (selected_directory):
+        if selected_directory:
             self.settings.monitored_dir = selected_directory
             self.__indexDB.save_settings(self.settings)
             self.txtMonitoredDir.setText(self.settings.monitored_dir)
@@ -126,14 +127,14 @@ class PreferencesWindow:
 
     def btnPickOutputDir_click(self):
         selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory"))
-        if (selected_directory):
+        if selected_directory:
             self.settings.output_dir = selected_directory
             self.__indexDB.save_settings(self.settings)
             self.txtOutputDir.setText(self.settings.output_dir)
 
     def btnPickUnknownOutputDir_click(self):
         selected_directory = QtCore.QDir.toNativeSeparators(QtWidgets.QFileDialog.getExistingDirectory(self.window, "Pick output directory"))
-        if (selected_directory):
+        if selected_directory:
             self.settings.unknown_output_dir = selected_directory
             self.__indexDB.save_settings(self.settings)
             self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
@@ -142,7 +143,7 @@ class PreferencesWindow:
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
             self.window, "Confirm Action", "Clear all settings and restore defaults?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if (QtWidgets.QMessageBox.Yes == response):
+        if QtWidgets.QMessageBox.Yes == response:
             self.__indexDB.clear_settings()
             self.settings = self.__indexDB.get_settings()
             self.apply_settings()

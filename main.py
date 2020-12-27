@@ -1,11 +1,13 @@
-import sys
 import logging
 import multiprocessing
+import sys
 import threading
-from pie import TrayIcon, PreferencesWindow
-from pie.util import MiscUtils
 from multiprocessing import Manager
-from PySide2 import QtCore, QtWidgets, QtGui
+
+from PySide2 import QtCore, QtGui, QtWidgets
+
+from pie import TrayIcon
+from pie.util import MiscUtils
 
 if __name__ == "__main__":
     APP_ICON_FILE_PATH = "assets/pie_logo.png"

@@ -1,11 +1,13 @@
 import logging
-from pie.core import IndexingHelper, ExifHelper, MediaProcessor, IndexDB
-from pie.util import MiscUtils, QWorker
+from multiprocessing import Event, Queue
+
+from PySide2 import QtCore, QtGui, QtWidgets
+
+from pie.core import IndexDB, IndexingHelper, MediaProcessor
 from pie.domain import IndexingTask, Settings
+from pie.util import MiscUtils, QWorker
+
 from .preferences_window import PreferencesWindow
-from PySide2 import QtCore, QtWidgets, QtGui
-from multiprocessing import Queue, Event, Manager
-from typing import Set
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -44,10 +46,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def startIndexAction_triggered(self):
         self.background_processing_started()
         self.indexing_stop_event = Event()
-        self.deletion_worker = QWorker(self.start_indexing)
-        self.deletion_worker.signals.progress.connect(self.indexing_progress)
-        self.deletion_worker.signals.finished.connect(self.background_processing_finished)
-        self.threadpool.start(self.deletion_worker)
+        self.indexing_worker = QWorker(self.start_indexing)
+        self.indexing_worker.signals.progress.connect(self.indexing_progress)
+        self.indexing_worker.signals.finished.connect(self.background_processing_finished)
+        self.threadpool.start(self.indexing_worker)
         self.stopIndexAction.setEnabled(True)
 
     def stopIndexAction_triggered(self):
@@ -55,7 +57,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             None, "Confirm Action", "Are you sure you want to stop the current task?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
-        if (QtWidgets.QMessageBox.Yes == response):
+        if QtWidgets.QMessageBox.Yes == response:
             self.stopIndexAction.setEnabled(False)
             self.stop_async_tasks()
 
@@ -64,7 +66,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             None, "Confirm Action", "Forget indexed files and delete all output files?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
-        if (QtWidgets.QMessageBox.Yes == response):
+        if QtWidgets.QMessageBox.Yes == response:
             self.background_processing_started()
             self.deletion_worker = QWorker(self.start_deletion, True)
             self.deletion_worker.signals.finished.connect(self.background_processing_finished)
@@ -75,7 +77,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             None, "Confirm Action", "Delete all output files?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
-        if (QtWidgets.QMessageBox.Yes == response):
+        if QtWidgets.QMessageBox.Yes == response:
             self.background_processing_started()
             self.deletion_worker = QWorker(self.start_deletion, False)
             self.deletion_worker.signals.finished.connect(self.background_processing_finished)
@@ -92,7 +94,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.__logger.info("Output directories cleared")
 
     def editPreferencesAction_triggered(self):
-        if (self.preferences_window == None):
+        if self.preferences_window is None:
             self.preferences_window = PreferencesWindow(self.log_queue, self.apply_process_changed_setting)
         self.preferences_window.show()
 
@@ -110,12 +112,12 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             (scanned_files, _) = indexing_helper.scan_dirs()
             indexing_helper.remove_slate_files(indexDB, scanned_files)
             indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
-            if (not self.indexing_stop_event.is_set()):
+            if not self.indexing_stop_event.is_set():
                 indexing_helper.create_media_files(scanned_files)
-            if (not self.indexing_stop_event.is_set()):
+            if not self.indexing_stop_event.is_set():
                 media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
                 media_processor.save_processed_files(indexDB)
-            if (not self.indexing_stop_event.is_set()):
+            if not self.indexing_stop_event.is_set():
                 misc_utils.cleanEmptyOutputDirs()
 
     def background_processing_started(self):
@@ -123,7 +125,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.clearIndexAction.setEnabled(False)
         self.clearOutputDirsAction.setEnabled(False)
         self.editPrefAction.setEnabled(False)
-        if (self.preferences_window != None):
+        if self.preferences_window is not None:
             self.preferences_window.hide()
 
     def background_processing_finished(self):
@@ -137,11 +139,11 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         print("%d%% done" % progress)
 
     def stop_async_tasks(self):
-        if(self.indexing_stop_event):
+        if self.indexing_stop_event:
             self.indexing_stop_event.set()
 
     def cleanup(self):
-        if (not self.preferences_window == None):
+        if not self.preferences_window is None:
             self.preferences_window.cleanup()
 
     def apply_process_changed_setting(self):

@@ -1,0 +1,3 @@
+[tool.isort]
+sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
+line_length = 300
