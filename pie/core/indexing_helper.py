@@ -7,7 +7,7 @@ from pie.domain import ScannedFile, ScannedFileType, IndexingTask, MediaFile
 from pie.util import MiscUtils, PyProcess, PyProcessPool
 from .index_db import IndexDB
 from .exif_helper import ExifHelper
-from typing import List, Dict, Callable, Set
+from typing import List, Dict, Callable, Set, Tuple
 from datetime import datetime
 from multiprocessing import Process, Value, Queue, JoinableQueue, Event, Manager, Lock
 from logging import Logger
@@ -64,7 +64,7 @@ class IndexingHelper:
             os.remove(output_file)
         indexDB.delete_media_file(media_file)
 
-    def remove_deleted_files(self, indexDB: IndexDB, deleted_files: [str]):
+    def remove_deleted_files(self, indexDB: IndexDB, deleted_files: List[str]):
         media_files_by_path = indexDB.get_all_media_files_by_path()
         for deleted_file in deleted_files:
             if (self.__indexing_stop_event.is_set()):
@@ -78,7 +78,7 @@ class IndexingHelper:
             scanned_files_by_path[scanned_file.file_path] = scanned_file
         return scanned_files_by_path
 
-    def scan_dirs(self) -> ([ScannedFile], [str]):
+    def scan_dirs(self) -> Tuple[List[ScannedFile], List[str]]:
         IndexingHelper.__logger.info("BEGIN:: Dir scan")
         scanned_files = self.__scan_dir_recursive(self.__indexing_task.settings.monitored_dir)
         IndexingHelper.__logger.info("END:: Dir scan")
@@ -125,9 +125,9 @@ class IndexingHelper:
                         IndexingHelper.__logger.info("File Scanned: %s", file.file_path)
                         scanned_files.append(file)
 
-    def scan_files(self, fileNames: Set[str]) -> ([ScannedFile], [str]):
+    def scan_files(self, fileNames: Set[str]) -> Tuple[List[ScannedFile], List[str]]:
         filePathsToScan: List[str] = []
-        deletedFiles: [str] = []
+        deletedFiles: List[str] = []
         for filePath in fileNames:
             filePathWithoutExtension = os.path.splitext(filePath)[0]
             matchingFiles = glob.glob(filePathWithoutExtension + "*")
@@ -143,7 +143,7 @@ class IndexingHelper:
                 fileNamesByDir[parentDir] = []
             fileNamesByDir[parentDir].append(os.path.basename(filePath))
 
-        scanned_files: [ScannedFile] = []
+        scanned_files: List[ScannedFile] = []
         for dirPath, fileNames in fileNamesByDir.items():
             if (self.__indexing_stop_event.is_set()):
                 break
@@ -152,7 +152,7 @@ class IndexingHelper:
             IndexingHelper.__logger.info("END:: Scanning DIR: %s", dirPath)
         return (scanned_files, deletedFiles)
 
-    def create_media_files(self, scanned_files: List[ScannedFile]) -> [str]:
+    def create_media_files(self, scanned_files: List[ScannedFile]) -> List[str]:
         IndexingHelper.__logger.info("BEGIN:: Media file creation and indexing")
         pool = PyProcessPool(pool_name="IndexingWorker", process_count=self.__indexing_task.settings.indexing_workers, log_queue=self.__log_queue,
                              target=IndexingHelper.indexing_process_exec, initializer=IndexDB.create_instance, terminator=IndexDB.destroy_instance, stop_event=self.__indexing_stop_event)

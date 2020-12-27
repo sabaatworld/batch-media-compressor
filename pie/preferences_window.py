@@ -46,7 +46,6 @@ class PreferencesWindow:
         self.chkSkipSameNameRaw: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkSkipSameNameRaw')
         self.chkConvertUnknown: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkConvertUnknown')
         self.chkOverwriteFiles: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkOverwriteFiles')
-        self.chkProcessChanged: QtWidgets.QCheckBox = self.window.findChild(QtWidgets.QCheckBox, 'chkProcessChanged')
         self.spinImageQuality: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageQuality')
         self.spinImageMaxDimension: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinImageMaxDimension')
         self.spinVideoMaxDimension: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinVideoMaxDimension')
@@ -70,7 +69,6 @@ class PreferencesWindow:
         self.chkSkipSameNameRaw.stateChanged.connect(self.chkSkipSameNameRaw_stateChanged)
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
         self.chkOverwriteFiles.stateChanged.connect(self.chkOverwriteFiles_stateChanged)
-        self.chkProcessChanged.stateChanged.connect(self.chkProcessChanged_stateChanged)
 
         self.btnRestoreDefaults.clicked.connect(self.btnRestoreDefaults_click)
 
@@ -161,7 +159,6 @@ class PreferencesWindow:
         self.chkSkipSameNameRaw.setChecked(self.settings.skip_same_name_raw)
         self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
         self.chkOverwriteFiles.setChecked(self.settings.overwrite_output_files)
-        self.chkProcessChanged.setChecked(self.settings.process_changed)
         self.spinImageQuality.setValue(self.settings.image_compression_quality)
         self.spinImageMaxDimension.setValue(self.settings.image_max_dimension)
         self.spinVideoMaxDimension.setValue(self.settings.video_max_dimension)
@@ -202,11 +199,6 @@ class PreferencesWindow:
     def chkOverwriteFiles_stateChanged(self):
         self.settings.overwrite_output_files = self.chkOverwriteFiles.isChecked()
         self.__indexDB.save_settings(self.settings)
-
-    def chkProcessChanged_stateChanged(self):
-        self.settings.process_changed = self.chkProcessChanged.isChecked()
-        self.__indexDB.save_settings(self.settings)
-        self.apply_process_changed_setting()
 
     def spinImageQuality_valueChanged(self, new_value: int):
         self.settings.image_compression_quality = new_value

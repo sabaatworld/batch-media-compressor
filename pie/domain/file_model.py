@@ -91,7 +91,6 @@ class Settings(Base):
     skip_same_name_raw: bool = Column(Boolean)
     convert_unknown: bool = Column(Boolean)
     overwrite_output_files: bool = Column(Boolean)
-    process_changed: bool = Column(Boolean)
     indexing_workers: int = Column(Integer)
     conversion_workers: int = Column(Integer)
     gpu_workers: int = Column(Integer)

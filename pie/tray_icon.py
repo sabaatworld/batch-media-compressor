@@ -5,8 +5,6 @@ from pie.domain import IndexingTask, Settings
 from .preferences_window import PreferencesWindow
 from PySide2 import QtCore, QtWidgets, QtGui
 from multiprocessing import Queue, Event, Manager
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileSystemEvent, EVENT_TYPE_MOVED, FileSystemMovedEvent
 from typing import Set
 
 
@@ -18,7 +16,6 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.log_queue = log_queue
         self.preferences_window: PreferencesWindow = None
         self.indexing_stop_event: Event = None
-        self.changedFiles = None
         self.observer = None
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
@@ -28,7 +25,6 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
         tray_menu = QtWidgets.QMenu('Main Menu')
         self.startIndexAction = tray_menu.addAction('Start Indexing', self.startIndexAction_triggered)
-        self.startIndexChangedAction = tray_menu.addAction('Start Indexing Changed Files', self.startIndexChangedAction_triggered)
         self.stopIndexAction = tray_menu.addAction('Stop Indexing', self.stopIndexAction_triggered)
         self.stopIndexAction.setEnabled(False)
         tray_menu.addSeparator()
@@ -53,10 +49,6 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.deletion_worker.signals.finished.connect(self.background_processing_finished)
         self.threadpool.start(self.deletion_worker)
         self.stopIndexAction.setEnabled(True)
-
-    def startIndexChangedAction_triggered(self):
-        self.changedFiles: Set[str] = self.watchdogEventsHandler.get_changed_files()
-        self.startIndexAction_triggered()
 
     def stopIndexAction_triggered(self):
         response: QtWidgets.QMessageBox.StandardButton = QtWidgets.QMessageBox.question(
@@ -115,26 +107,19 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             misc_utils = MiscUtils(indexing_task)
             misc_utils.create_root_marker()
             indexing_helper = IndexingHelper(indexing_task, self.log_queue, self.indexing_stop_event)
-            (scanned_files, deleted_files) = indexing_helper.scan_dirs() if self.changedFiles == None else indexing_helper.scan_files(self.changedFiles)
-            if self.changedFiles == None:
-                indexing_helper.remove_slate_files(indexDB, scanned_files)
-            else:
-                indexing_helper.remove_deleted_files(indexDB, deleted_files)
+            (scanned_files, _) = indexing_helper.scan_dirs()
+            indexing_helper.remove_slate_files(indexDB, scanned_files)
             indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
             if (not self.indexing_stop_event.is_set()):
-                saved_file_paths = indexing_helper.create_media_files(scanned_files)
+                indexing_helper.create_media_files(scanned_files)
             if (not self.indexing_stop_event.is_set()):
                 media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
-                if self.changedFiles == None:
-                    media_processor.save_processed_files(indexDB)
-                else:
-                    media_processor.save_processed_files(indexDB, saved_file_paths)
+                media_processor.save_processed_files(indexDB)
             if (not self.indexing_stop_event.is_set()):
                 misc_utils.cleanEmptyOutputDirs()
 
     def background_processing_started(self):
         self.startIndexAction.setEnabled(False)
-        self.startIndexChangedAction.setEnabled(False)
         self.clearIndexAction.setEnabled(False)
         self.clearOutputDirsAction.setEnabled(False)
         self.editPrefAction.setEnabled(False)
@@ -143,12 +128,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
     def background_processing_finished(self):
         self.startIndexAction.setEnabled(True)
-        self.startIndexChangedAction.setEnabled(True)
         self.stopIndexAction.setEnabled(False)
         self.clearIndexAction.setEnabled(True)
         self.clearOutputDirsAction.setEnabled(True)
         self.editPrefAction.setEnabled(True)
-        self.changedFiles = None
 
     def indexing_progress(self, progress):
         print("%d%% done" % progress)
@@ -158,46 +141,10 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.indexing_stop_event.set()
 
     def cleanup(self):
-        self.stop_watching_changed_files()
         if (not self.preferences_window == None):
             self.preferences_window.cleanup()
-
-    def start_watching_changed_files(self, settings: Settings):
-        if self.observer == None:
-            self.__logger.info("Starting changed file watcher")
-            self.watchdogEventsHandler = WatchdogEventsHandler()
-            self.observer = Observer()
-            self.observer.schedule(self.watchdogEventsHandler, settings.monitored_dir, recursive=True)
-            self.observer.start()
-
-    def stop_watching_changed_files(self):
-        if self.observer != None:
-            self.__logger.info("Stopping changed file watcher")
-            self.observer.stop()
-            self.observer = None
 
     def apply_process_changed_setting(self):
         with IndexDB() as indexDB:
             settings = indexDB.get_settings()
-            if settings.process_changed:
-                self.start_watching_changed_files(settings)
-            else:
-                self.stop_watching_changed_files()
-
-
-class WatchdogEventsHandler(FileSystemEventHandler):
-
-    def __init__(self):
-        self.__changedFiles: Set[str] = set()
-
-    def on_any_event(self, event: FileSystemEvent):
-        if not event.is_directory:
-            self.__changedFiles.add(event.src_path)
-            if event.event_type == EVENT_TYPE_MOVED:
-                move_event: FileSystemMovedEvent = event
-                self.__changedFiles.add(move_event._dest_path)
-
-    def get_changed_files(self) -> Set[str]:
-        changedFilesCopy = set(self.__changedFiles)
-        self.__changedFiles.clear()
-        return changedFilesCopy
+            # Not doing anything here for now

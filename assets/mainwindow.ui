@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>990</width>
-    <height>531</height>
+    <height>547</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,32 +17,13 @@
    <set>Qt::ImhNone</set>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="horizontalLayoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>480</y>
-      <width>641</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QPushButton" name="btnRestoreDefaults">
-       <property name="text">
-        <string>Restore Defaults</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>10</y>
       <width>640</width>
-      <height>391</height>
+      <height>411</height>
      </rect>
     </property>
     <property name="title">
@@ -63,7 +44,7 @@
        <x>10</x>
        <y>70</y>
        <width>621</width>
-       <height>171</height>
+       <height>191</height>
       </rect>
      </property>
      <property name="title">
@@ -75,7 +56,7 @@
         <x>10</x>
         <y>30</y>
         <width>601</width>
-        <height>101</height>
+        <height>111</height>
        </rect>
       </property>
      </widget>
@@ -104,9 +85,9 @@
       <property name="geometry">
        <rect>
         <x>500</x>
-        <y>140</y>
+        <y>150</y>
         <width>110</width>
-        <height>20</height>
+        <height>32</height>
        </rect>
       </property>
       <property name="text">
@@ -116,10 +97,10 @@
      <widget class="QPushButton" name="btnAddDirToExclude">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>140</y>
+        <x>390</x>
+        <y>150</y>
         <width>110</width>
-        <height>20</height>
+        <height>32</height>
        </rect>
       </property>
       <property name="text">
@@ -131,7 +112,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>250</y>
+       <y>270</y>
        <width>621</width>
        <height>131</height>
       </rect>
@@ -265,7 +246,7 @@
         <x>10</x>
         <y>10</y>
         <width>601</width>
-        <height>31</height>
+        <height>33</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -547,7 +528,7 @@
       <x>660</x>
       <y>250</y>
       <width>320</width>
-      <height>151</height>
+      <height>171</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -562,7 +543,7 @@
        <x>10</x>
        <y>40</y>
        <width>301</width>
-       <height>111</height>
+       <height>116</height>
       </rect>
      </property>
      <layout class="QFormLayout" name="formLayout_4">
@@ -689,7 +670,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>410</y>
+      <y>430</y>
       <width>971</width>
       <height>71</height>
      </rect>
@@ -714,10 +695,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="chkOverwriteFiles">
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="chkConvertUnknown">
         <property name="text">
-         <string>Overwrite Converted Files</string>
+         <string>Convert Media without Capture Date</string>
         </property>
        </widget>
       </item>
@@ -728,22 +709,28 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="chkConvertUnknown">
-        <property name="text">
-         <string>Convert Media without Capture Date</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="2">
-       <widget class="QCheckBox" name="chkProcessChanged">
+       <widget class="QCheckBox" name="chkOverwriteFiles">
         <property name="text">
-         <string>Process Changed Media when Idle</string>
+         <string>Overwrite Converted Files</string>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="btnRestoreDefaults">
+    <property name="geometry">
+     <rect>
+      <x>840</x>
+      <y>510</y>
+      <width>141</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Restore Defaults</string>
+    </property>
    </widget>
   </widget>
  </widget>
