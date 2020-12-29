@@ -6,6 +6,7 @@ import shutil
 import sys
 from logging.handlers import QueueHandler, TimedRotatingFileHandler
 from multiprocessing import Queue
+from appdirs import user_data_dir
 
 from pie.domain import IndexingTask
 
@@ -20,7 +21,7 @@ class MiscUtils:
 
     @staticmethod
     def get_app_data_dir():
-        app_data_dir = os.path.abspath('app_data')
+        app_data_dir = user_data_dir("Batch Media Compressor", "Two Hand Apps") if (MiscUtils.running_in_pyinstaller_bundle()) else MiscUtils.get_abs_resource_path("app_data")
         os.makedirs(app_data_dir, exist_ok=True)
         return app_data_dir
 
@@ -72,8 +73,8 @@ class MiscUtils:
     def debug_this_thread():
         try:
             # Only available during debugging session. It's important to not install this module in Python evnironment.
-            import ptvsd
-            ptvsd.debug_this_thread()
+            import debugpy
+            debugpy.debug_this_thread()
         except:
             pass
 
@@ -120,11 +121,6 @@ class MiscUtils:
     def create_root_marker(self):
         os.makedirs(self.__indexing_task.settings.output_dir, exist_ok=True)
         os.makedirs(self.__indexing_task.settings.unknown_output_dir, exist_ok=True)
-        # marker_file_name = ".pie_root"
-        # with open(os.path.join(self.__indexing_task.settings.output_dir, marker_file_name), 'w') as file:
-        #     file.write("Just a marker file. Nothing interesting here.")
-        # with open(os.path.join(self.__indexing_task.settings.unknown_output_dir, marker_file_name), 'w') as file:
-        #     file.write("Just a marker file. Nothing interesting here.")
 
     @staticmethod
     def generate_hash(file_path: str) -> str:
@@ -133,3 +129,18 @@ class MiscUtils:
             while chunk := file.read(1048576): # 1MB in bytes
                 file_hash.update(chunk)
         return file_hash.hexdigest()
+
+    @staticmethod
+    def get_abs_resource_path(rel_path: str) -> str:
+        base_dir = getattr(sys, '_MEIPASS', os.getcwd())
+        return os.path.join(base_dir, rel_path)
+
+    @staticmethod
+    def get_app_icon_path() -> str:
+        file_name = "pie_logo.ico" if (sys.platform == 'win32' or sys.platform == 'cygwin') else "pie_logo.png"
+        file_path = MiscUtils.get_abs_resource_path(os.path.join('assets', file_name))
+        return file_path
+
+    @staticmethod
+    def running_in_pyinstaller_bundle() -> bool:
+        return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')

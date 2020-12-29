@@ -60,3 +60,13 @@ Make sure that you have "worker" count is equal to the number of logical CPU cor
 If you want to offload video conversion to your **Nvidia GPU**, you will need to a version of **ffmpeg** that support hardware encoding. Since this type of ffmpeg binary is not distributable, you will need compile it from source. For windows, the easiest way to do this was [media-autobuild_suite](https://github.com/m-ab-s/media-autobuild_suite). However, there are many other options available as mentioned [ffmpeg compilation guide](https://trac.ffmpeg.org/wiki/CompilationGuide). Basically, you need "--enable-cuda-nvcc" / "--enable-libnpp" support in your ffmpeg binary, which in-turn requires [Nvidia's CUDA SDK](https://developer.nvidia.com/cuda-toolkit) to run.
 
 Once you have ffmpeg setup, crank up the GPU count and workers to indicate that you want to convert videos using your GPU. I've tested parallel conversion on 2 X Nvidia GTX 1080 GPUs on my Windows 10 machine and they really accelerate the video conversion. Note that consumer GPUs like these only support a limited number of conversions in parallel so conversion will actually fail if you want to have more than one worker per GPU. To remove this restriction, apply this [nvidia-patch](https://github.com/keylase/nvidia-patch).
+
+### Building Binary
+
+1. Configure the project path in 'batch-media-compressor.spec'
+1. Execute the following commands:
+
+    ```
+    pyinstaller --noconfirm 'pyinstaller/batch-media-compressor.spec'
+    codesign --entitlements 'pyinstaller/batch-media-compressor.entitlements' -s 'Batch Media Compressor Code Signing' 'dist/Batch Media Compressor.app'
+    ```

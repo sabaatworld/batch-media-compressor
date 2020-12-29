@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Personal Image Explorer</string>
+   <string>Batch Media Compressor</string>
   </property>
   <property name="inputMethodHints">
    <set>Qt::ImhNone</set>

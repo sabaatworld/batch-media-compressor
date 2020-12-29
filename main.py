@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 import sys
 import threading
-from multiprocessing import Manager
+from multiprocessing import Manager, freeze_support
 
 from PySide2 import QtCore, QtGui, QtWidgets
 
@@ -10,7 +10,8 @@ from pie import TrayIcon
 from pie.util import MiscUtils
 
 if __name__ == "__main__":
-    APP_ICON_FILE_PATH = "assets/pie_logo.png"
+    if MiscUtils.running_in_pyinstaller_bundle():
+        freeze_support()
 
     multiprocessing.set_start_method('spawn')
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
@@ -22,11 +23,11 @@ if __name__ == "__main__":
     logger_thread.start()
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon(APP_ICON_FILE_PATH))
-    app.setApplicationDisplayName("Personal Image Explorer")  # TODO test + add org / ver
+    app.setWindowIcon(QtGui.QIcon(MiscUtils.get_app_icon_path()))
+    app.setApplicationDisplayName("Batch Media Compressor")  # TODO test + add org / ver
     app.setQuitOnLastWindowClosed(False)
 
-    tray_icon = TrayIcon(APP_ICON_FILE_PATH, log_queue)
+    tray_icon = TrayIcon(log_queue)
     tray_icon.show()
     return_code = app.exec_()
 
@@ -35,4 +36,5 @@ if __name__ == "__main__":
     log_queue.put(None)
     logging.debug("Waiting for logging thread to terminate")
     logger_thread.join()
+    logging.debug("Logging thread terminated")
     sys.exit(return_code)

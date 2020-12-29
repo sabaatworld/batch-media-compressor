@@ -1,6 +1,7 @@
 import json
 import logging
 from multiprocessing import Queue
+from pie.util.misc_utils import MiscUtils
 from typing import Callable
 
 from PySide2 import QtCore, QtUiTools, QtWidgets
@@ -18,7 +19,7 @@ class PreferencesWindow:
         self.__indexDB = IndexDB()
         self.settings = self.__indexDB.get_settings()
 
-        ui_file = QtCore.QFile(PreferencesWindow.__UI_FILE)
+        ui_file = QtCore.QFile(MiscUtils.get_abs_resource_path(PreferencesWindow.__UI_FILE))
         ui_file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
         self.window: QtWidgets.QMainWindow = loader.load(ui_file)
@@ -91,6 +92,8 @@ class PreferencesWindow:
 
     def show(self):
         self.window.show()
+        self.window.raise_()
+        self.window.activateWindow()
 
     def hide(self):
         self.window.hide()

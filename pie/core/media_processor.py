@@ -156,7 +156,7 @@ class MediaProcessor:
 
     @staticmethod
     def exec_subprocess(popenargs: List[str], errorMsg: str):
-        results = subprocess.run(popenargs, capture_output=True)
+        results = subprocess.run(popenargs, capture_output=True, close_fds=True, check=False)
         if results.returncode != 0:
             raise RuntimeError("{}: CommandLine: {}, Output: {}".format(errorMsg, subprocess.list2cmdline(popenargs), str(results.stderr)))
 

@@ -10,7 +10,7 @@
     "git.ignoreLimitWarning": true,
     "python.formatting.provider": "autopep8",
     "python.formatting.autopep8Args": [
-        "--max-line-length=200"
+        "--max-line-length=300"
     ],
     "python.pythonPath": ".venv/bin/python",
 }

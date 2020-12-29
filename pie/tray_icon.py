@@ -13,8 +13,8 @@ from .preferences_window import PreferencesWindow
 class TrayIcon(QtWidgets.QSystemTrayIcon):
     __logger = logging.getLogger('TrayIcon')
 
-    def __init__(self, tray_icon_file_path: str, log_queue: Queue):
-        super().__init__(QtGui.QIcon(tray_icon_file_path))
+    def __init__(self, log_queue: Queue):
+        super().__init__(QtGui.QIcon(MiscUtils.get_app_icon_path()))
         self.log_queue = log_queue
         self.preferences_window: PreferencesWindow = None
         self.indexing_stop_event: Event = None
@@ -22,7 +22,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
 
-        self.setToolTip("Personal Image Explorer")
+        self.setToolTip("Batch Media Compressor")
         self.activated.connect(self.trayIcon_activated)
 
         tray_menu = QtWidgets.QMenu('Main Menu')
@@ -84,6 +84,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.threadpool.start(self.deletion_worker)
 
     def start_deletion(self, clearIndex: bool, progress_callback):
+        MiscUtils.debug_this_thread()
         with IndexDB() as indexDB:
             if clearIndex:
                 indexDB.clear_indexed_files()
@@ -102,8 +103,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         QtWidgets.QApplication.quit()
 
     def start_indexing(self, progress_callback):
+        MiscUtils.debug_this_thread()
         with IndexDB() as indexDB:
-            MiscUtils.debug_this_thread()
             indexing_task = IndexingTask()
             indexing_task.settings = indexDB.get_settings()
             misc_utils = MiscUtils(indexing_task)
