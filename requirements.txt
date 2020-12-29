@@ -5,3 +5,4 @@ Send2Trash==1.5.0
 sqlalchemy==1.3.18
 pyinstaller==4.1
 appdirs==1.4.4
+zc.lockfile==2.0

@@ -29,6 +29,10 @@ class MiscUtils:
         return app_data_dir
 
     @staticmethod
+    def get_lock_file_path():
+        return os.path.join(MiscUtils.get_app_data_dir(), "run.lock")
+
+    @staticmethod
     def configure_logging():
         log_file_dir = os.path.join(MiscUtils.get_app_data_dir(), "logs")
         os.makedirs(log_file_dir, exist_ok=True)
