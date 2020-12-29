@@ -1,10 +1,11 @@
+import json
 import logging
 import mimetypes
 import os
 import re
+import subprocess
 from datetime import datetime
 
-import pyexifinfo
 from dateutil.parser import parse
 from dateutil.tz import UTC
 
@@ -60,13 +61,54 @@ class ExifHelper:
 
     @staticmethod
     def __get_exif_dict(file_path: str):
-        json = pyexifinfo.get_json(file_path)[0]
+        json = ExifHelper.__get_json_from_exiftool(file_path)[0]
         exif = {}
         for key, value in json.items():
             key_parts = key.split(":")
             modified_key = key_parts[1] if len(key_parts) > 1 else key_parts[0]
             exif[modified_key] = value
         return exif
+
+    @staticmethod
+    def __get_json_from_exiftool(filename):
+        """ Return a json value of the exif
+
+        Get a filename and return a JSON object
+
+        Arguments:
+            filename {string} -- your filename
+
+        Returns:
+            [JSON] -- Return a JSON object
+        """
+        #Process this function
+        filename = os.path.abspath(filename)
+        output = ExifHelper.__run_exiftool_command_line(['exiftool', '-G', '-j', '-sort', filename])
+        if output:
+            #convert bytes to string
+            output = output.decode('utf-8').rstrip('\r\n')
+            return json.loads(output)
+        else:
+            return output
+
+    @staticmethod
+    def __run_exiftool_command_line(cmd):
+        """Handle the command line call
+
+        keyword arguments:
+        cmd = a list
+
+        return
+        0 if error
+        or a string for the command line output
+        """
+        try:
+            output = subprocess.Popen(cmd, **MiscUtils.subprocess_args())
+            output = output.stdout.read()
+            return output.strip()
+
+        except subprocess.CalledProcessError:
+            return 0
 
     @staticmethod
     def __get_mime(file_path: str, exif: dict):

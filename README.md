@@ -63,10 +63,9 @@ Once you have ffmpeg setup, crank up the GPU count and workers to indicate that 
 
 ### Building Binary
 
-1. Configure the project path in 'batch-media-compressor.spec'
-1. Execute the following commands:
+Execute the following command to build the binary:
 
     ```
     pyinstaller --noconfirm 'pyinstaller/batch-media-compressor.spec'
-    codesign --entitlements 'pyinstaller/batch-media-compressor.entitlements' -s 'Batch Media Compressor Code Signing' 'dist/Batch Media Compressor.app'
+    codesign --entitlements 'pyinstaller/app.entitlements' -s 'Batch Media Compressor Code Signing' 'dist/Batch Media Compressor.app'
     ```

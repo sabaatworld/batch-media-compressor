@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['../main.py'],
-             pathex=['/Users/sabaata/Projects/VisualStudioCode/pie-indexing-service-py'],
+             pathex=[],
              binaries=[],
              datas=[('../assets/mainwindow.ui', 'assets'), ('../assets/pie_logo.ico', 'assets'), ('../assets/pie_logo.png', 'assets')],
              hiddenimports=['PySide2.QtXml'],
@@ -23,14 +23,15 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='batch-media-compressor',
+          name='Batch Media Compressor',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='../assets/pie_logo.ico')
+          console=False , icon='../assets/pie_logo.ico',
+          version='version_info.txt')
 app = BUNDLE(exe,
              name='Batch Media Compressor.app',
              icon='../assets/pie_logo.icns',

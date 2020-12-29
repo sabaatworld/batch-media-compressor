@@ -1,0 +1,30 @@
+# For more info, see: https://docs.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
+
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x4,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+    ),
+  kids=[
+    StringFileInfo(
+      [
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'Two Hand Apps'),
+        StringStruct(u'FileDescription', u'Batch Media Compressor'),
+        StringStruct(u'FileVersion', u'1.0.0'),
+        StringStruct(u'InternalName', u'Batch Media Compressor'),
+        StringStruct(u'LegalCopyright', u'Copyright \xa9 2020 Two Hand Apps. All rights reserved.'),
+        StringStruct(u'OriginalFilename', u'Batch Media Compressor.exe'),
+        StringStruct(u'ProductName', u'Batch Media Compressor'),
+        StringStruct(u'ProductVersion', u'1.0.0')])
+      ]),
+    VarFileInfo([VarStruct(u'Translation', [0x409, 1252])])
+  ]
+)

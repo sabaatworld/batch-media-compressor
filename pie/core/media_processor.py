@@ -122,7 +122,7 @@ class MediaProcessor:
         if new_dimentions:
             args.insert(2, "-resize")
             args.insert(3, "{}x{}".format(new_dimentions['height'], new_dimentions['width']))
-        MediaProcessor.exec_subprocess(args, "Image conversion failed")
+        MiscUtils.exec_subprocess(args, "Image conversion failed")
 
     @staticmethod
     def convert_video_file(settings: Settings, media_file: MediaFile, original_file_path: str, new_file_path: str, target_gpu: int):
@@ -145,20 +145,14 @@ class MediaProcessor:
             if new_dimentions:
                 args.insert(22, "-vf")
                 args.insert(23, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
-        MediaProcessor.exec_subprocess(args, "Video conversion failed")
+        MiscUtils.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod
     def copy_exif_to_file(original_file_path: str, new_file_path: str, rotation: str):
         args = ["exiftool", "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
         if rotation:
             args.insert(4, "-rotation={}".format(rotation))
-        MediaProcessor.exec_subprocess(args, "EXIF copy failed")
-
-    @staticmethod
-    def exec_subprocess(popenargs: List[str], errorMsg: str):
-        results = subprocess.run(popenargs, capture_output=True, close_fds=True, check=False)
-        if results.returncode != 0:
-            raise RuntimeError("{}: CommandLine: {}, Output: {}".format(errorMsg, subprocess.list2cmdline(popenargs), str(results.stderr)))
+        MiscUtils.exec_subprocess(args, "EXIF copy failed")
 
     @staticmethod
     def get_new_dimentions(original_height: int, original_width: int, max_dimention: int):
