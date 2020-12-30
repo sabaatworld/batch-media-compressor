@@ -1,7 +1,6 @@
 import logging
 import math
 import os
-import subprocess
 import time
 from datetime import datetime
 from multiprocessing import Event, Lock, Manager, Queue
@@ -101,7 +100,7 @@ class MediaProcessor:
                     MediaProcessor.convert_image_file(settings, media_file, original_file_path, save_file_path)
                 if ScannedFileType.VIDEO.name == media_file.file_type:
                     MediaProcessor.convert_video_file(settings, media_file, original_file_path, save_file_path, target_gpu)
-                MediaProcessor.copy_exif_to_file(original_file_path, save_file_path, media_file.video_rotation)
+                MediaProcessor.copy_exif_to_file(settings, original_file_path, save_file_path, media_file.video_rotation)
                 media_file.converted_file_hash = MiscUtils.generate_hash(save_file_path)
                 media_file.conversion_settings_hash = conversion_settings_hash
                 with save_file_path_computation_lock:
@@ -116,7 +115,7 @@ class MediaProcessor:
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):
         # Sample: magick convert -resize 320x480 -quality 75 inputFile.cr2 outputfile.jpg
-        args = ["magick", "convert", "-quality", str(settings.image_compression_quality), original_file_path, save_file_path]
+        args = [settings.path_magick, "convert", "-quality", str(settings.image_compression_quality), original_file_path, save_file_path]
 
         new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
         if new_dimentions:
@@ -132,14 +131,14 @@ class MediaProcessor:
         # Adding ability to play converted videos in QuickTime: https://brandur.org/fragments/ffmpeg-h265
         if target_gpu < 0:
             # CPU Sample: ffmpeg -noautorotate -i input -c:v libx265 -crf 28 -tag:v hvc1 -c:a aac -ac 2 -vf scale=320:240 -b:a 128k -y output.mp4
-            args = ["ffmpeg", "-noautorotate", "-i", original_file_path, "-c:v", "libx265", "-crf", str(settings.video_crf),
+            args = [settings.path_ffmpeg, "-noautorotate", "-i", original_file_path, "-c:v", "libx265", "-crf", str(settings.video_crf),
                     "-tag:v", "hvc1", "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-y", new_file_path]
             if new_dimentions:
                 args.insert(14, "-vf")
                 args.insert(15, "scale={}:{}".format(new_dimentions['width'], new_dimentions['height']))
         else:
             # GPU Sample: ffmpeg -noautorotate -hwaccel nvdec -hwaccel_device 0 -i input -c:v hevc_nvenc -preset fast -gpu 0 -c:a aac -ac 2 -b:a 128k -tag:v hvc1 -vf "hwupload_cuda,scale_npp=w=1920:h=1080:format=yuv420p" -y output.mp4
-            args = ["ffmpeg", "-noautorotate", "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i", original_file_path,
+            args = [settings.path_ffmpeg, "-noautorotate", "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i", original_file_path,
                     "-c:v", "hevc_nvenc", "-preset", settings.video_nvenc_preset, "-gpu", str(target_gpu),
                     "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-tag:v", "hvc1", "-y", new_file_path]
             if new_dimentions:
@@ -148,8 +147,8 @@ class MediaProcessor:
         MiscUtils.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod
-    def copy_exif_to_file(original_file_path: str, new_file_path: str, rotation: str):
-        args = ["exiftool", "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
+    def copy_exif_to_file(settings: Settings, original_file_path: str, new_file_path: str, rotation: str):
+        args = [settings.path_exiftool, "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
         if rotation:
             args.insert(4, "-rotation={}".format(rotation))
         MiscUtils.exec_subprocess(args, "EXIF copy failed")

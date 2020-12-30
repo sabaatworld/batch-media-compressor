@@ -158,13 +158,13 @@ class IndexingHelper:
                              target=IndexingHelper.indexing_process_exec, initializer=IndexDB.create_instance, terminator=IndexDB.destroy_instance, stop_event=self.__indexing_stop_event)
         db_write_lock: Lock = Manager().Lock() # pylint: disable=maybe-no-member
         tasks = list(map(lambda scanned_file: (self.__indexing_task.indexing_time, self.__indexing_task.settings.output_dir,
-                                               self.__indexing_task.settings.unknown_output_dir, scanned_file, db_write_lock), scanned_files))
+                                               self.__indexing_task.settings.unknown_output_dir, self.__indexing_task.settings.path_exiftool, scanned_file, db_write_lock), scanned_files))
         saved_file_paths = pool.submit_and_wait(tasks)
         IndexingHelper.__logger.info("END:: Media file creation and indexing")
         return saved_file_paths
 
     @staticmethod
-    def indexing_process_exec(indexing_time: datetime, output_dir: str, unknown_output_dir: str, scanned_file: ScannedFile, db_write_lock: Lock, indexDB: IndexDB, task_id: str):
+    def indexing_process_exec(indexing_time: datetime, output_dir: str, unknown_output_dir: str, path_exiftool: str, scanned_file: ScannedFile, db_write_lock: Lock, indexDB: IndexDB, task_id: str):
         if (not scanned_file.already_indexed or scanned_file.needs_reindex):
             try:
                 existing_media_file = None
@@ -176,7 +176,7 @@ class IndexingHelper:
                         if os.path.exists(existing_output_file):
                             logging.info("Deleting old output file %s for %s", existing_output_file, existing_media_file.file_path)
                             os.remove(existing_output_file)
-                media_file = ExifHelper.create_media_file(indexing_time, scanned_file, existing_media_file)
+                media_file = ExifHelper.create_media_file(path_exiftool, indexing_time, scanned_file, existing_media_file)
                 if media_file:
                     with db_write_lock:
                         indexDB.insert_media_file(media_file)

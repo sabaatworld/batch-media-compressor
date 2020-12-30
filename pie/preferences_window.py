@@ -1,6 +1,8 @@
 import json
 import logging
 from multiprocessing import Queue
+
+from sqlalchemy import exc
 from pie.util.misc_utils import MiscUtils
 from typing import Callable
 
@@ -12,6 +14,8 @@ from pie.core import IndexDB
 class PreferencesWindow:
     __logger = logging.getLogger('PreferencesWindow')
     __UI_FILE = "assets/mainwindow.ui"
+    __QLINEEDIT_VALID_VALUE_STYLESHEET = "QLineEdit { background: rgba(0, 255, 0, 0.2); }"
+    __QLINEEDIT_INVALID_VALUE_STYLESHEET = "QLineEdit { background: rgba(255, 0, 0, 0.2); }"
 
     def __init__(self, log_queue: Queue, apply_process_changed_setting: Callable[[], None]):
         self.log_queue = log_queue
@@ -38,8 +42,6 @@ class PreferencesWindow:
         self.btnPickOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickOutputDir')
         self.txtUnknownOutputDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtUnknownOutputDir')
         self.btnPickUnknownOutputDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickUnknownOutputDir')
-        self.cbOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbOutputDirPathType')
-        self.cbUnknownOutputDirPathType: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbUnknownOutputDirPathType')
 
         self.btnRestoreDefaults: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnRestoreDefaults')
         self.lblTaskStatus: QtWidgets.QLabel = self.window.findChild(QtWidgets.QLabel, 'lblTaskStatus')
@@ -59,14 +61,16 @@ class PreferencesWindow:
         self.spinGpuWorkers: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinGpuWorkers')
         self.spinGpuCount: QtWidgets.QSpinBox = self.window.findChild(QtWidgets.QSpinBox, 'spinGpuCount')
 
+        self.txtPathFfmpeg: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtPathFfmpeg')
+        self.txtPathMagick: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtPathMagick')
+        self.txtPathExiftool: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtPathExiftool')
+
         self.btnPickMonitoredDir.clicked.connect(self.btnPickMonitoredDir_click)
         self.lwDirsToExclude.itemSelectionChanged.connect(self.lwDirsToExclude_itemSelectionChanged)
         self.btnAddDirToExclude.clicked.connect(self.btnAddDirToExclude_click)
         self.btnDelDirToExclude.clicked.connect(self.btnDelDirToExclude_click)
         self.btnPickOutputDir.clicked.connect(self.btnPickOutputDir_click)
         self.btnPickUnknownOutputDir.clicked.connect(self.btnPickUnknownOutputDir_click)
-        self.cbOutputDirPathType.currentTextChanged.connect(self.cbOutputDirPathType_currentTextChanged)
-        self.cbUnknownOutputDirPathType.currentTextChanged.connect(self.cbUnknownOutputDirPathType_currentTextChanged)
         self.chkSkipSameNameVideo.stateChanged.connect(self.chkSkipSameNameVideo_stateChanged)
         self.chkSkipSameNameRaw.stateChanged.connect(self.chkSkipSameNameRaw_stateChanged)
         self.chkConvertUnknown.stateChanged.connect(self.chkConvertUnknown_stateChanged)
@@ -85,12 +89,16 @@ class PreferencesWindow:
         self.spinGpuWorkers.valueChanged.connect(self.spinGpuWorkers_valueChanged)
         self.spinGpuCount.valueChanged.connect(self.spinGpuCount_valueChanged)
 
+        self.txtPathFfmpeg.textChanged.connect(self.txtPathFfmpeg_textChanged)
+        self.txtPathMagick.textChanged.connect(self.txtPathMagick_textChanged)
+        self.txtPathExiftool.textChanged.connect(self.txtPathExiftool_textChanged)
+
         self.cbVideoNvencPreset: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbVideoNvencPreset')
 
         self.__indexDB.save_settings(self.settings)
-        self.apply_settings()
 
     def show(self):
+        self.apply_settings()
         self.window.show()
         self.window.raise_()
         self.window.activateWindow()
@@ -157,8 +165,6 @@ class PreferencesWindow:
         self.lwDirsToExclude.addItems(json.loads(self.settings.dirs_to_exclude))
         self.txtUnknownOutputDir.setText(self.settings.unknown_output_dir)
         self.txtOutputDir.setText(self.settings.output_dir)
-        self.cbOutputDirPathType.setCurrentIndex(self.cbOutputDirPathType.findText(self.settings.output_dir_path_type))
-        self.cbUnknownOutputDirPathType.setCurrentIndex(self.cbUnknownOutputDirPathType.findText(self.settings.unknown_output_dir_path_type))
         self.chkSkipSameNameVideo.setChecked(self.settings.skip_same_name_video)
         self.chkSkipSameNameRaw.setChecked(self.settings.skip_same_name_raw)
         self.chkConvertUnknown.setChecked(self.settings.convert_unknown)
@@ -173,20 +179,15 @@ class PreferencesWindow:
         self.spinConversionWorkers.setValue(self.settings.conversion_workers)
         self.spinGpuWorkers.setValue(self.settings.gpu_workers)
         self.spinGpuCount.setValue(self.settings.gpu_count)
+        self.txtPathFfmpeg.setText(self.settings.path_ffmpeg)
+        self.txtPathMagick.setText(self.settings.path_magick)
+        self.txtPathExiftool.setText(self.settings.path_exiftool)
 
     def cleanup(self):
         self.__logger.info("Performing cleanup")
         self.window.hide()
         self.__indexDB.disconnect_db()
         self.__logger.info("Cleanup completed")
-
-    def cbOutputDirPathType_currentTextChanged(self, new_text: str):
-        self.settings.output_dir_path_type = new_text
-        self.__indexDB.save_settings(self.settings)
-
-    def cbUnknownOutputDirPathType_currentTextChanged(self, new_text: str):
-        self.settings.unknown_output_dir_path_type = new_text
-        self.__indexDB.save_settings(self.settings)
 
     def chkSkipSameNameVideo_stateChanged(self):
         self.settings.skip_same_name_video = self.chkSkipSameNameVideo.isChecked()
@@ -243,3 +244,30 @@ class PreferencesWindow:
     def spinGpuCount_valueChanged(self, new_value: int):
         self.settings.gpu_count = new_value
         self.__indexDB.save_settings(self.settings)
+
+    def txtPathFfmpeg_textChanged(self, new_text: str):
+        try:
+            MiscUtils.exec_subprocess([new_text, "-h"], "Wrong path")
+            self.txtPathFfmpeg.setStyleSheet(PreferencesWindow.__QLINEEDIT_VALID_VALUE_STYLESHEET)
+            self.settings.path_ffmpeg = new_text
+            self.__indexDB.save_settings(self.settings)
+        except:
+            self.txtPathFfmpeg.setStyleSheet(PreferencesWindow.__QLINEEDIT_INVALID_VALUE_STYLESHEET)
+
+    def txtPathMagick_textChanged(self, new_text: str):
+        try:
+            MiscUtils.exec_subprocess([new_text, "-help"], "Wrong path")
+            self.txtPathMagick.setStyleSheet(PreferencesWindow.__QLINEEDIT_VALID_VALUE_STYLESHEET)
+            self.settings.path_magick = new_text
+            self.__indexDB.save_settings(self.settings)
+        except:
+            self.txtPathMagick.setStyleSheet(PreferencesWindow.__QLINEEDIT_INVALID_VALUE_STYLESHEET)
+
+    def txtPathExiftool_textChanged(self, new_text: str):
+        try:
+            MiscUtils.exec_subprocess([new_text, "-ver"], "Wrong path")
+            self.txtPathExiftool.setStyleSheet(PreferencesWindow.__QLINEEDIT_VALID_VALUE_STYLESHEET)
+            self.settings.path_exiftool = new_text
+            self.__indexDB.save_settings(self.settings)
+        except:
+            self.txtPathExiftool.setStyleSheet(PreferencesWindow.__QLINEEDIT_INVALID_VALUE_STYLESHEET)

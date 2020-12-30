@@ -144,9 +144,13 @@ class MiscUtils:
 
     @staticmethod
     def get_app_icon_path() -> str:
-        file_name = "pie_logo.ico" if (sys.platform == 'win32' or sys.platform == 'cygwin') else "pie_logo.png"
+        file_name = "pie_logo.ico" if MiscUtils.is_platform_win() else "pie_logo.png"
         file_path = MiscUtils.get_abs_resource_path(os.path.join('assets', file_name))
         return file_path
+
+    @staticmethod
+    def is_platform_win() -> bool:
+        return sys.platform == 'win32' or sys.platform == 'cygwin'
 
     @staticmethod
     def running_in_pyinstaller_bundle() -> bool:

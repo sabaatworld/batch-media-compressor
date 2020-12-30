@@ -102,6 +102,9 @@ class Settings(Base):
     video_crf: int = Column(Integer)
     video_nvenc_preset: str = Column(String)
     video_audio_bitrate: int = Column(Integer)
+    path_ffmpeg: str = Column(String)
+    path_magick: str = Column(String)
+    path_exiftool: str = Column(String)
 
     def generate_image_settings_hash(self):
         hash = hashlib.sha1()

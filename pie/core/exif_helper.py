@@ -17,9 +17,9 @@ class ExifHelper:
     __logger = logging.getLogger('ExifHelper')
 
     @staticmethod
-    def create_media_file(index_time: datetime, scanned_file: ScannedFile, existing_media_file: MediaFile) -> MediaFile:
+    def create_media_file(path_exiftool: str, index_time: datetime, scanned_file: ScannedFile, existing_media_file: MediaFile) -> MediaFile:
         file_path = scanned_file.file_path
-        exif = ExifHelper.__get_exif_dict(file_path)
+        exif = ExifHelper.__get_exif_dict(path_exiftool, file_path)
         error_str = ExifHelper.__get_exif(exif, "Error")
         exif_file_type_str = ExifHelper.__get_exif(exif, "FileType")
         if error_str:
@@ -60,8 +60,8 @@ class ExifHelper:
         return media_file
 
     @staticmethod
-    def __get_exif_dict(file_path: str):
-        json = ExifHelper.__get_json_from_exiftool(file_path)[0]
+    def __get_exif_dict(path_exiftool: str, file_path: str):
+        json = ExifHelper.__get_json_from_exiftool(path_exiftool, file_path)[0]
         exif = {}
         for key, value in json.items():
             key_parts = key.split(":")
@@ -70,7 +70,7 @@ class ExifHelper:
         return exif
 
     @staticmethod
-    def __get_json_from_exiftool(filename):
+    def __get_json_from_exiftool(path_exiftool: str, filename: str):
         """ Return a json value of the exif
 
         Get a filename and return a JSON object
@@ -83,7 +83,7 @@ class ExifHelper:
         """
         #Process this function
         filename = os.path.abspath(filename)
-        output = ExifHelper.__run_exiftool_command_line(['exiftool', '-G', '-j', '-sort', filename])
+        output = ExifHelper.__run_exiftool_command_line([path_exiftool, '-G', '-j', '-sort', filename])
         if output:
             #convert bytes to string
             output = output.decode('utf-8').rstrip('\r\n')

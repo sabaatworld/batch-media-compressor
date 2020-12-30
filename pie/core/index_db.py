@@ -125,6 +125,15 @@ class IndexDB:
         if settings.video_audio_bitrate is None:
             settings.video_audio_bitrate = 128
             save_record = True
+        if settings.path_ffmpeg is None:
+            settings.path_ffmpeg = "/usr/local/bin/ffmpeg" if not MiscUtils.is_platform_win() else "ffmpeg"
+            save_record = True
+        if settings.path_magick is None:
+            settings.path_magick = "/usr/local/bin/magick" if not MiscUtils.is_platform_win() else "magick"
+            save_record = True
+        if settings.path_exiftool is None:
+            settings.path_exiftool = "/usr/local/bin/exiftool" if not MiscUtils.is_platform_win() else "exiftool"
+            save_record = True
 
         if save_record:
             session.add(settings)
