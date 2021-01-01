@@ -31,7 +31,7 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=False , icon='../assets/pie_logo.ico',
-          version='version_info.txt')
+          version='win_exe_version_info.txt')
 app = BUNDLE(exe,
              name='Batch Media Compressor.app',
              icon='../assets/pie_logo.icns',
@@ -42,6 +42,7 @@ app = BUNDLE(exe,
                 'CFBundleShortVersionString': '1.0.0',
                 'CFBundleVersion': '1.0.0',
                 'NSHumanReadableCopyright': 'Copyright © 2020 Two Hand Apps. All rights reserved.',
-                'LSApplicationCategoryType': 'public.app-category.photography'
+                'LSApplicationCategoryType': 'public.app-category.photography',
+                'NSRequiresAquaSystemAppearance': True # TODO: Support dark mode 
              }
             )

@@ -1,8 +1,14 @@
+# Development
 pylint==2.4.4
+
+# Dependencies
 python-dateutil==2.8.1
 PySide2==5.14.1
 Send2Trash==1.5.0
 sqlalchemy==1.3.18
-pyinstaller==4.1
 appdirs==1.4.4
 zc.lockfile==2.0
+
+# Packaging
+pyinstaller==4.1
+dmgbuild==1.4.2
