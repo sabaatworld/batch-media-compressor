@@ -1,9 +1,12 @@
+import json
 import logging
 import webbrowser
 from multiprocessing import Event, Queue
+from urllib.request import urlopen
 
 from PySide2 import QtCore, QtGui, QtWidgets
 
+from packaging import version
 from pie.core import IndexDB, IndexingHelper, MediaProcessor
 from pie.domain import IndexingTask, Settings
 from pie.util import MiscUtils, QWorker
@@ -12,6 +15,7 @@ from .preferences_window import PreferencesWindow
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
+    __APP_VER = "1.0.0"
     __logger = logging.getLogger('TrayIcon')
 
     def __init__(self, log_queue: Queue):
@@ -20,6 +24,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.preferences_window: PreferencesWindow = None
         self.indexing_stop_event: Event = None
         self.observer = None
+        self.indexDB = IndexDB()
         self.threadpool: QtCore.QThreadPool = QtCore.QThreadPool()
         self.__logger.debug("QT multithreading with thread pool size: %s", self.threadpool.maxThreadCount())
 
@@ -35,11 +40,16 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.clearOutputDirsAction = tray_menu.addAction('Clear Ouput Directories', self.clearOutputDirsAction_triggered)
         self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
         tray_menu.addSeparator()
+        self.updateCheckAction = tray_menu.addAction('Check for Updates', self.updateCheckAction_triggered)
         self.coffeeAction = tray_menu.addAction('Buy me a Coffee', self.coffeeAction_triggered)
+        tray_menu.addSeparator()
         tray_menu.addAction('Quit', self.quitMenuAction_triggered)
         self.setContextMenu(tray_menu)
 
         self.apply_process_changed_setting()
+        if self.indexDB.get_settings().auto_update_check:
+            self.update_check_worker = QWorker(self.auto_update_check)
+            self.threadpool.start(self.update_check_worker)
 
     def trayIcon_activated(self, reason):
         pass
@@ -99,7 +109,40 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         if self.preferences_window is None:
             self.preferences_window = PreferencesWindow(self.log_queue, self.apply_process_changed_setting)
         self.preferences_window.show()
-    
+
+    def updateCheckAction_triggered(self):
+        self.check_for_updates(True)
+
+    def auto_update_check(self, progress_callback):
+        MiscUtils.debug_this_thread()
+        self.check_for_updates(False)
+
+    def check_for_updates(self, display_not_found: bool):
+        api_url = "https://api.github.com/repos/sabaatworld/batch-media-compressor/releases/latest"
+        releases_url = "https://github.com/sabaatworld/batch-media-compressor/releases"
+        update_found = False
+        try:
+            response = urlopen(api_url)
+            response_string = response.read().decode('utf-8')
+            response_json = json.loads(response_string)
+            tag_name: str = response_json["tag_name"]
+            if tag_name is not None:
+                release_version = version.parse(tag_name.replace("v", ""))
+                current_version = version.parse(self.__APP_VER)
+                self.__logger.info("Updated Check successful: Current Version: %s, Latest Release: %s", str(current_version), str(release_version))
+                if current_version < release_version:
+                    update_found = True
+        except:
+            self.__logger.exception("Failed to check for updates")
+
+        if update_found:
+            if QtWidgets.QMessageBox.information(None, "Update Check",
+                "New version available. Do you wish to download the latest release now?\n\nCurrent Verion: {}\nNew Version: {}".format(str(current_version), str(release_version)),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
+                webbrowser.open(releases_url)
+        elif display_not_found:
+            QtWidgets.QMessageBox.information(None, "Update Check", "No updates found.\n\nIf you think this is an error, please check your internet connection and try again.", QtWidgets.QMessageBox.Ok)
+
     def coffeeAction_triggered(self):
         webbrowser.open('https://paypal.me/sabaat')
 
@@ -148,10 +191,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.indexing_stop_event.set()
 
     def cleanup(self):
-        if not self.preferences_window is None:
+        if self.preferences_window is not None:
             self.preferences_window.cleanup()
+        self.indexDB.disconnect_db()
 
     def apply_process_changed_setting(self):
-        with IndexDB() as indexDB:
-            settings = indexDB.get_settings()
-            # Not doing anything here for now
+        pass

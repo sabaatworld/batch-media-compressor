@@ -134,6 +134,9 @@ class IndexDB:
         if settings.path_exiftool is None:
             settings.path_exiftool = "/usr/local/bin/exiftool" if not MiscUtils.is_platform_win() else "exiftool"
             save_record = True
+        if settings.auto_update_check is None:
+            settings.auto_update_check = True
+            save_record = True
 
         if save_record:
             session.add(settings)

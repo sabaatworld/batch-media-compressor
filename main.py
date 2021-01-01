@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon(MiscUtils.get_app_icon_path()))
-    app.setApplicationDisplayName("Batch Media Compressor")
+    app.setApplicationDisplayName("Batch Media Compressor")  # TODO test + add org / ver
     app.setQuitOnLastWindowClosed(False)
 
     try:
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     except LockError:
         error_msg = "Cannot acquire lock on file {}.\n\nAnother instance of the application is probably running.".format(MiscUtils.get_lock_file_path())
         logging.fatal(error_msg)
-        QtWidgets.QMessageBox.critical(None, "Batch Media Compressor - Error", error_msg, QtWidgets.QMessageBox.Ok)
+        QtWidgets.QMessageBox.critical(None, "Fatal Error", error_msg, QtWidgets.QMessageBox.Ok)
         return_code = -1
     
     logging.info("Application is being shutdown")

@@ -105,6 +105,7 @@ class Settings(Base):
     path_ffmpeg: str = Column(String)
     path_magick: str = Column(String)
     path_exiftool: str = Column(String)
+    auto_update_check: bool = Column(Boolean)
 
     def generate_image_settings_hash(self):
         hash = hashlib.sha1()
