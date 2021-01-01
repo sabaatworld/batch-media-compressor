@@ -1,4 +1,5 @@
 import logging
+import webbrowser
 from multiprocessing import Event, Queue
 
 from PySide2 import QtCore, QtGui, QtWidgets
@@ -32,9 +33,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         tray_menu.addSeparator()
         self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
         self.clearOutputDirsAction = tray_menu.addAction('Clear Ouput Directories', self.clearOutputDirsAction_triggered)
-        tray_menu.addSeparator()
         self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
         tray_menu.addSeparator()
+        self.coffeeAction = tray_menu.addAction('Buy me a Coffee', self.coffeeAction_triggered)
         tray_menu.addAction('Quit', self.quitMenuAction_triggered)
         self.setContextMenu(tray_menu)
 
@@ -98,6 +99,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         if self.preferences_window is None:
             self.preferences_window = PreferencesWindow(self.log_queue, self.apply_process_changed_setting)
         self.preferences_window.show()
+    
+    def coffeeAction_triggered(self):
+        webbrowser.open('https://paypal.me/sabaat')
 
     def quitMenuAction_triggered(self):
         QtWidgets.QApplication.quit()

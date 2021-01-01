@@ -63,9 +63,14 @@ Once you have ffmpeg setup, crank up the GPU count and workers to indicate that 
 
 ### Building Binary
 
-Execute the following command to build the binary:
+#### OSX
 
-    ```
-    pyinstaller --noconfirm 'packaging/batch-media-compressor.spec'
-    codesign --entitlements 'packaging/app.entitlements' -s 'Batch Media Compressor Code Signing' 'dist/Batch Media Compressor.app'
-    ```
+```
+./packaging/build_osx.sh
+```
+
+#### Windows
+
+```
+ .\packaging\build_win.bat <PATH_TO_PFX_FILE>
+```
