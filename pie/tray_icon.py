@@ -1,8 +1,11 @@
 import json
 import logging
+from pie.log_window import LogWindow
 import webbrowser
 from multiprocessing import Event, Queue
 from urllib.request import urlopen
+import ssl
+import certifi
 
 from PySide2 import QtCore, QtGui, QtWidgets
 
@@ -22,6 +25,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         super().__init__(QtGui.QIcon(MiscUtils.get_app_icon_path()))
         self.log_queue = log_queue
         self.preferences_window: PreferencesWindow = None
+        self.log_window: LogWindow = None
         self.indexing_stop_event: Event = None
         self.observer = None
         self.indexDB = IndexDB()
@@ -38,7 +42,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         tray_menu.addSeparator()
         self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
         self.clearOutputDirsAction = tray_menu.addAction('Clear Ouput Directories', self.clearOutputDirsAction_triggered)
+        tray_menu.addSeparator()
         self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
+        self.viewLogsAction = tray_menu.addAction('View Logs', self.viewLogsAction_triggered)
         tray_menu.addSeparator()
         self.updateCheckAction = tray_menu.addAction('Check for Updates', self.updateCheckAction_triggered)
         self.coffeeAction = tray_menu.addAction('Buy me a Coffee', self.coffeeAction_triggered)
@@ -107,8 +113,13 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
     def editPreferencesAction_triggered(self):
         if self.preferences_window is None:
-            self.preferences_window = PreferencesWindow(self.log_queue, self.apply_process_changed_setting)
+            self.preferences_window = PreferencesWindow(self.apply_process_changed_setting)
         self.preferences_window.show()
+
+    def viewLogsAction_triggered(self):
+        if self.log_window is None:
+            self.log_window = LogWindow(self.threadpool)
+        self.log_window.show()
 
     def updateCheckAction_triggered(self):
         self.check_for_updates(True)
@@ -122,7 +133,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         releases_url = "https://github.com/sabaatworld/batch-media-compressor/releases"
         update_found = False
         try:
-            response = urlopen(api_url)
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            response = urlopen(api_url, context=ssl_context)
             response_string = response.read().decode('utf-8')
             response_json = json.loads(response_string)
             tag_name: str = response_json["tag_name"]
@@ -193,6 +205,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def cleanup(self):
         if self.preferences_window is not None:
             self.preferences_window.cleanup()
+        if self.log_window is not None:
+            self.log_window.cleanup()
         self.indexDB.disconnect_db()
 
     def apply_process_changed_setting(self):

@@ -1,14 +1,11 @@
 import json
 import logging
-from multiprocessing import Queue
-
-from sqlalchemy import exc
-from pie.util.misc_utils import MiscUtils
 from typing import Callable
 
 from PySide2 import QtCore, QtUiTools, QtWidgets
 
 from pie.core import IndexDB
+from pie.util.misc_utils import MiscUtils
 
 
 class PreferencesWindow:
@@ -17,8 +14,7 @@ class PreferencesWindow:
     __QLINEEDIT_VALID_VALUE_STYLESHEET = "QLineEdit { background: rgba(0, 255, 0, 0.2); }"
     __QLINEEDIT_INVALID_VALUE_STYLESHEET = "QLineEdit { background: rgba(255, 0, 0, 0.2); }"
 
-    def __init__(self, log_queue: Queue, apply_process_changed_setting: Callable[[], None]):
-        self.log_queue = log_queue
+    def __init__(self, apply_process_changed_setting: Callable[[], None]):
         self.apply_process_changed_setting = apply_process_changed_setting
         self.__indexDB = IndexDB()
         self.settings = self.__indexDB.get_settings()

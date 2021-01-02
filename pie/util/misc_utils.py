@@ -36,7 +36,7 @@ class MiscUtils:
     def configure_logging():
         log_file_dir = os.path.join(MiscUtils.get_app_data_dir(), "logs")
         os.makedirs(log_file_dir, exist_ok=True)
-        formatter = logging.Formatter('[%(asctime)s][%(processName)s][%(threadName)s][%(name)s] %(levelname)5s: %(message)s')
+        formatter = MiscUtils.get_default_log_formatter()
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(formatter)
@@ -48,6 +48,10 @@ class MiscUtils:
         root_logger.addHandler(console_handler)
         root_logger.addHandler(rolling_file_handler)
         logging.info("Logging has been configured")
+
+    @staticmethod
+    def get_default_log_formatter() -> logging.Formatter:
+        return logging.Formatter('[%(asctime)s][%(processName)s][%(threadName)s][%(name)s] %(levelname)5s: %(message)s')
 
     @staticmethod
     def logger_thread_exec(log_queue: Queue):
