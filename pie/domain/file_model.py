@@ -4,7 +4,7 @@ from enum import Enum
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 
-from pie.common import Base
+from pie.common import DB_BASE
 
 
 class ScannedFileType(Enum):
@@ -47,7 +47,7 @@ class ScannedFile:
         self.needs_reindex = needs_reindex
 
 
-class MediaFile(Base):
+class MediaFile(DB_BASE):
     __tablename__ = 'media_files'
     parent_dir_path = Column(String)
     file_path = Column(String, primary_key=True)
@@ -78,7 +78,7 @@ class MediaFile(Base):
     output_rel_file_path = Column(String)
 
 
-class Settings(Base):
+class Settings(DB_BASE):
     __tablename__ = 'settings'
     id: str = Column(String, primary_key=True)
     monitored_dir: str = Column(String)

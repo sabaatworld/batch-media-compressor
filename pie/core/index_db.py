@@ -6,7 +6,7 @@ from typing import Dict, List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from pie.common import Base
+from pie.common import DB_BASE
 from pie.domain import MediaFile, Settings
 from pie.util import MiscUtils
 
@@ -18,7 +18,7 @@ class IndexDB:
         # For in-memory, use: 'sqlite:///:memory:'
         db_file = 'sqlite:///' + os.path.join(MiscUtils.get_app_data_dir(), "index.db")
         self.__engine = create_engine(db_file, echo=False)
-        Base.metadata.create_all(self.__engine)
+        DB_BASE.metadata.create_all(self.__engine)
         self.__session: Session = sessionmaker(bind=self.__engine)()
         IndexDB.__logger.info("Connected to IndexDB")
 

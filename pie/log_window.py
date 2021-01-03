@@ -24,7 +24,6 @@ class LogWindow:
         ui_file.close()
 
         self.__cleanup_started = False
-        self.__window_visible = False
         self.__window.setWindowTitle("View Logs")
 
         self.__log_window_queue = Queue()
@@ -45,15 +44,14 @@ class LogWindow:
         self.__btn_log_dir.clicked.connect(self.__btn_log_dir_clicked)
 
     def show(self):
-        self.__txt_log_display.clear()
+        if not self.__window.isVisible():
+            self.__txt_log_display.clear()
         self.__window.show()
         self.__window.raise_()
         self.__window.activateWindow()
-        self.__window_visible = True
 
     def hide(self):
         self.__window.hide()
-        self.__window_visible = False
 
     def cleanup(self):
         self.__logger.info("Performing cleanup")
@@ -78,7 +76,7 @@ class LogWindow:
             log_record = self.__log_window_queue.get()
             if log_record is None:
                 break
-            if self.__window_visible:
+            if self.__window.isVisible():
                 log_text = log_formatter.format(log_record)
                 progress_signal.emit(log_text)
 

@@ -1,20 +1,19 @@
 import json
 import logging
-from pie.log_window import LogWindow
+import ssl
 import webbrowser
 from multiprocessing import Event, Queue
 from urllib.request import urlopen
-import ssl
-import certifi
 
+import certifi
 from PySide2 import QtCore, QtGui, QtWidgets
 
 from packaging import version
 from pie.core import IndexDB, IndexingHelper, MediaProcessor
 from pie.domain import IndexingTask, Settings
+from pie.log_window import LogWindow
+from pie.preferences_window import PreferencesWindow
 from pie.util import MiscUtils, QWorker
-
-from .preferences_window import PreferencesWindow
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -36,11 +35,11 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.activated.connect(self.trayIcon_activated)
 
         tray_menu = QtWidgets.QMenu('Main Menu')
-        self.startIndexAction = tray_menu.addAction('Start Indexing', self.startIndexAction_triggered)
-        self.stopIndexAction = tray_menu.addAction('Stop Indexing', self.stopIndexAction_triggered)
+        self.startIndexAction = tray_menu.addAction('Start Processing', self.startIndexAction_triggered)
+        self.stopIndexAction = tray_menu.addAction('Stop Processing', self.stopIndexAction_triggered)
         self.stopIndexAction.setEnabled(False)
         tray_menu.addSeparator()
-        self.clearIndexAction = tray_menu.addAction('Clear Index', self.clearIndexAction_triggered)
+        self.clearIndexAction = tray_menu.addAction('Clear Indexed Files', self.clearIndexAction_triggered)
         self.clearOutputDirsAction = tray_menu.addAction('Clear Ouput Directories', self.clearOutputDirsAction_triggered)
         tray_menu.addSeparator()
         self.editPrefAction = tray_menu.addAction('Edit Preferences', self.editPreferencesAction_triggered)
@@ -61,6 +60,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         pass
 
     def startIndexAction_triggered(self):
+        self.show_view_logs_window()
         self.background_processing_started()
         self.indexing_stop_event = Event()
         self.indexing_worker = QWorker(self.start_indexing)
@@ -116,6 +116,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.preferences_window.show()
 
     def viewLogsAction_triggered(self):
+        self.show_view_logs_window()
+
+    def show_view_logs_window(self):
         if self.log_window is None:
             self.log_window = LogWindow(self.threadpool)
         self.log_window.show()
@@ -147,9 +150,11 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.__logger.exception("Failed to check for updates")
 
         if update_found:
-            if QtWidgets.QMessageBox.information(None, "Update Check",
+            if QtWidgets.QMessageBox.information(
+                None, "Update Check",
                 "New version available. Do you wish to download the latest release now?\n\nCurrent Verion: {}\nNew Version: {}".format(str(current_version), str(release_version)),
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+            ) == QtWidgets.QMessageBox.Yes:
                 webbrowser.open(releases_url)
         elif display_not_found:
             QtWidgets.QMessageBox.information(None, "Update Check", "No updates found.\n\nIf you think this is an error, please check your internet connection and try again.", QtWidgets.QMessageBox.Ok)
