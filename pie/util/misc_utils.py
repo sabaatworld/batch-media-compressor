@@ -33,8 +33,12 @@ class MiscUtils:
         return os.path.join(MiscUtils.get_app_data_dir(), "run.lock")
 
     @staticmethod
+    def get_log_dir_path():
+        return os.path.join(MiscUtils.get_app_data_dir(), "logs")
+
+    @staticmethod
     def configure_logging():
-        log_file_dir = os.path.join(MiscUtils.get_app_data_dir(), "logs")
+        log_file_dir = MiscUtils.get_log_dir_path()
         os.makedirs(log_file_dir, exist_ok=True)
         formatter = MiscUtils.get_default_log_formatter()
         console_handler = logging.StreamHandler(sys.stdout)

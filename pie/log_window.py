@@ -1,30 +1,18 @@
-import json
 import logging
-from threading import Thread
+import os
 import webbrowser
-from multiprocessing import Event
-from queue import Queue
-from urllib.request import urlopen
-
-from PySide2 import QtCore, QtGui, QtWidgets, QtUiTools
-
-from packaging import version
-from pie.core import IndexDB, IndexingHelper, MediaProcessor
-from pie.domain import IndexingTask, Settings
-from pie.util import MiscUtils, QWorker
-from typing import Optional
-import time
-from threading import Thread
-
 from logging.handlers import QueueHandler
-from .preferences_window import PreferencesWindow
-import logging
-from collections import deque
+from queue import Queue
+
+from PySide2 import QtCore, QtUiTools, QtWidgets
+
+from pie.util import MiscUtils, QWorker
 
 
 class LogWindow:
     __logger = logging.getLogger('LogWindow')
     __UI_FILE = "assets/logwindow.ui"
+    __LINES_TO_DISPLAY = 5000
 
     def __init__(self, qt_threadpool: QtCore.QThreadPool):
         self.__qt_threadpool = qt_threadpool
@@ -36,23 +24,25 @@ class LogWindow:
         ui_file.close()
 
         self.__cleanup_started = False
-        self.__window.setWindowTitle("View Logs")
-        self.__window.setFixedSize(self.__window.size())
         self.__window_visible = False
+        self.__window.setWindowTitle("View Logs")
 
         self.__log_window_queue = Queue()
         self.__log_window_queue_handler = QueueHandler(self.__log_window_queue)
         self.__log_window_queue_handler.setLevel(logging.INFO)
         logging.getLogger().addHandler(self.__log_window_queue_handler)
 
-        self.__log_lines_to_display = deque(maxlen=3)
-        self.__queue_poll_thread = Thread(target=self.queue_poll_thread_target)
-        self.__queue_poll_thread.start()
-
-        self.__log_display_thread = Thread(target=self.log_display_thread_target)
-        self.__log_display_thread.start()
+        self.qt_worker = QWorker(self.__queue_poll_thread_target)
+        self.qt_worker.signals.progress.connect(self.__queue_poll_thread_progress)
+        self.__qt_threadpool.start(self.qt_worker)
 
         self.__txt_log_display: QtWidgets.QPlainTextEdit = self.__window.findChild(QtWidgets.QPlainTextEdit, 'txt_log_display')
+        self.__btn_clear: QtWidgets.QPushButton = self.__window.findChild(QtWidgets.QPushButton, 'btn_clear')
+        self.__btn_log_dir: QtWidgets.QPushButton = self.__window.findChild(QtWidgets.QPushButton, 'btn_log_dir')
+
+        self.__txt_log_display.setMaximumBlockCount(self.__LINES_TO_DISPLAY)
+        self.__btn_clear.clicked.connect(self.__btn_clear_clicked)
+        self.__btn_log_dir.clicked.connect(self.__btn_log_dir_clicked)
 
     def show(self):
         self.__txt_log_display.clear()
@@ -71,32 +61,26 @@ class LogWindow:
         self.hide()
         logging.getLogger().removeHandler(self.__log_window_queue_handler)
         self.__log_window_queue.put(None)
-        self.__queue_poll_thread.join()
-        self.__log_display_thread.join()
         self.__logger.info("Cleanup completed")
 
-    def queue_poll_thread_target(self):
+    def __btn_clear_clicked(self):
+        self.__txt_log_display.clear()
+
+    def __btn_log_dir_clicked(self):
+        path = os.path.realpath(MiscUtils.get_log_dir_path())
+        webbrowser.open("file:///" + path)
+
+    def __queue_poll_thread_target(self, progress_signal):
+        MiscUtils.debug_this_thread()
         self.__logger.info("Queue poll thread started")
         log_formatter = MiscUtils.get_default_log_formatter()
         while not self.__cleanup_started:
             log_record = self.__log_window_queue.get()
             if log_record is None:
                 break
-            log_text = log_formatter.format(log_record)
-            self.__log_lines_to_display.append(log_text)
-
-    def log_display_thread_target(self):
-        self.__logger.info("Log display QT thread started")
-        while not self.__cleanup_started:
             if self.__window_visible:
-                qt_update_worker = QWorker(self.qt_update_thread_target)
-                self.__qt_threadpool.start(qt_update_worker)
-            time.sleep(1)
+                log_text = log_formatter.format(log_record)
+                progress_signal.emit(log_text)
 
-    def qt_update_thread_target(self, progress_callback):
-        log_text_to_display = str('\n'.join(self.__log_lines_to_display))
-        self.__txt_log_display.setPlainText(log_text_to_display)
-        self.__txt_log_display.repaint()
-
-    def get_log_window_queue(self) -> Queue:
-        return self.__log_window_queue
+    def __queue_poll_thread_progress(self, progress):
+        self.__txt_log_display.appendPlainText(progress)

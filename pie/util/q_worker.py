@@ -1,3 +1,4 @@
+import inspect
 import sys
 import traceback
 
@@ -20,13 +21,13 @@ class QWorkerSignals(QtCore.QObject):
         `object` data returned from processing, anything
 
     progress
-        `int` indicating % progress
+        `object` indicating progress
 
     '''
     finished = QtCore.Signal()
     error = QtCore.Signal(tuple)
     result = QtCore.Signal(object)
-    progress = QtCore.Signal(int)
+    progress = QtCore.Signal(object)
 
 
 class QWorker(QtCore.QRunnable):
@@ -43,17 +44,20 @@ class QWorker(QtCore.QRunnable):
 
     '''
 
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, function, *args, **kwargs):
         super(QWorker, self).__init__()
 
         # Store constructor arguments (re-used for processing)
-        self.fn = fn
+        self.function = function
         self.args = args
         self.kwargs = kwargs
         self.signals = QWorkerSignals()
 
         # Add the callback to our kwargs
-        self.kwargs['progress_callback'] = self.signals.progress
+        argspec: inspect.ArgSpec = inspect.getfullargspec(function)
+        progress_signal_arg = 'progress_signal'
+        if progress_signal_arg in argspec.args:
+            self.kwargs[progress_signal_arg] = self.signals.progress
 
     @QtCore.Slot()
     def run(self):
@@ -63,7 +67,7 @@ class QWorker(QtCore.QRunnable):
 
         # Retrieve args/kwargs here; and fire processing using them
         try:
-            result = self.fn(*self.args, **self.kwargs)
+            result = self.function(*self.args, **self.kwargs)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]

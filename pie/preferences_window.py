@@ -26,7 +26,7 @@ class PreferencesWindow:
         ui_file.close()
 
         self.window.setWindowTitle("Edit Preferences")
-        self.window.setFixedSize(self.window.size())
+        self.window.setFixedSize(self.window.size()) # TODO: Disable maximize button on OSX
 
         self.txtMonitoredDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtMonitoredDir')
         self.btnPickMonitoredDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickMonitoredDir')

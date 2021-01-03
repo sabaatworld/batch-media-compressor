@@ -64,7 +64,6 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.background_processing_started()
         self.indexing_stop_event = Event()
         self.indexing_worker = QWorker(self.start_indexing)
-        self.indexing_worker.signals.progress.connect(self.indexing_progress)
         self.indexing_worker.signals.finished.connect(self.background_processing_finished)
         self.threadpool.start(self.indexing_worker)
         self.stopIndexAction.setEnabled(True)
@@ -100,7 +99,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             self.deletion_worker.signals.finished.connect(self.background_processing_finished)
             self.threadpool.start(self.deletion_worker)
 
-    def start_deletion(self, clearIndex: bool, progress_callback):
+    def start_deletion(self, clearIndex: bool):
         MiscUtils.debug_this_thread()
         with IndexDB() as indexDB:
             if clearIndex:
@@ -124,7 +123,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def updateCheckAction_triggered(self):
         self.check_for_updates(True)
 
-    def auto_update_check(self, progress_callback):
+    def auto_update_check(self):
         MiscUtils.debug_this_thread()
         self.check_for_updates(False)
 
@@ -161,7 +160,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
     def quitMenuAction_triggered(self):
         QtWidgets.QApplication.quit()
 
-    def start_indexing(self, progress_callback):
+    def start_indexing(self):
         MiscUtils.debug_this_thread()
         with IndexDB() as indexDB:
             indexing_task = IndexingTask()
@@ -194,9 +193,6 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         self.clearIndexAction.setEnabled(True)
         self.clearOutputDirsAction.setEnabled(True)
         self.editPrefAction.setEnabled(True)
-
-    def indexing_progress(self, progress):
-        print("%d%% done" % progress)
 
     def stop_async_tasks(self):
         if self.indexing_stop_event:
