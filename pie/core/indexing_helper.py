@@ -19,8 +19,21 @@ class IndexingHelper:
 
     def __init__(self, indexing_task: IndexingTask, log_queue: Queue, indexing_stop_event: Event):
         self.__indexing_task = indexing_task
+        self.__image_extensions: Set[str] = IndexingHelper.parse_file_type_extension_str(self.__indexing_task.settings.image_extensions)
+        self.__image_raw_extensions: Set[str] = IndexingHelper.parse_file_type_extension_str(self.__indexing_task.settings.image_raw_extensions)
+        self.__video_extensions: Set[str] = IndexingHelper.parse_file_type_extension_str(self.__indexing_task.settings.video_extensions)
+        self.__video_raw_extensions: Set[str] = IndexingHelper.parse_file_type_extension_str(self.__indexing_task.settings.video_raw_extensions)
         self.__log_queue = log_queue
         self.__indexing_stop_event = indexing_stop_event
+
+    @staticmethod
+    def parse_file_type_extension_str(comma_delimited_list: str) -> Set[str]:
+        ext_set = set()
+        for item in comma_delimited_list.split(','):
+            stripped_item = item.strip()
+            if len(stripped_item) > 0:
+                ext_set.add(stripped_item)
+        return ext_set
 
     def lookup_already_indexed_files(self, indexDB: IndexDB, scanned_files: List[ScannedFile]):
         IndexingHelper.__logger.info("BEGIN:: IndexDB lookup for indexed files")
@@ -103,7 +116,7 @@ class IndexingHelper:
                 file_name_tuple = os.path.splitext(file_name)
                 file_name_without_extension = file_name_tuple[0]
                 extension = file_name_tuple[1].replace(".", "").upper()
-                (scanned_file_type, is_raw) = ScannedFileType.get_type(extension)
+                (scanned_file_type, is_raw) = ScannedFileType.get_type(self.__image_extensions, self.__image_raw_extensions, self.__video_extensions, self.__video_raw_extensions, extension)
                 file_path = os.path.join(dir_path, file_name)
                 if ScannedFileType.UNKNOWN != scanned_file_type:
                     creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
@@ -156,7 +169,7 @@ class IndexingHelper:
         IndexingHelper.__logger.info("BEGIN:: Media file creation and indexing")
         pool = PyProcessPool(pool_name="IndexingWorker", process_count=self.__indexing_task.settings.indexing_workers, log_queue=self.__log_queue,
                              target=IndexingHelper.indexing_process_exec, initializer=IndexDB.create_instance, terminator=IndexDB.destroy_instance, stop_event=self.__indexing_stop_event)
-        db_write_lock: Lock = Manager().Lock() # pylint: disable=maybe-no-member
+        db_write_lock: Lock = Manager().Lock()  # pylint: disable=maybe-no-member
         tasks = list(map(lambda scanned_file: (self.__indexing_task.indexing_time, self.__indexing_task.settings.output_dir,
                                                self.__indexing_task.settings.unknown_output_dir, self.__indexing_task.settings.path_exiftool, scanned_file, db_write_lock), scanned_files))
         saved_file_paths = pool.submit_and_wait(tasks)

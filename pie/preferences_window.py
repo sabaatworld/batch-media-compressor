@@ -26,7 +26,7 @@ class PreferencesWindow:
         ui_file.close()
 
         self.window.setWindowTitle("Edit Preferences")
-        self.window.setFixedSize(self.window.size()) # TODO: Disable maximize button on OSX
+        self.window.setFixedSize(self.window.size())  # TODO: Disable maximize button on OSX
 
         self.txtMonitoredDir: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtMonitoredDir')
         self.btnPickMonitoredDir: QtWidgets.QPushButton = self.window.findChild(QtWidgets.QPushButton, 'btnPickMonitoredDir')
@@ -63,6 +63,11 @@ class PreferencesWindow:
         self.txtPathMagick: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtPathMagick')
         self.txtPathExiftool: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtPathExiftool')
 
+        self.txtImageExt: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtImageExt')
+        self.txtImageRawExt: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtImageRawExt')
+        self.txtVideoExt: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtVideoExt')
+        self.txtVideoRawExt: QtWidgets.QLineEdit = self.window.findChild(QtWidgets.QLineEdit, 'txtVideoRawExt')
+
         self.btnPickMonitoredDir.clicked.connect(self.btnPickMonitoredDir_click)
         self.lwDirsToExclude.itemSelectionChanged.connect(self.lwDirsToExclude_itemSelectionChanged)
         self.btnAddDirToExclude.clicked.connect(self.btnAddDirToExclude_click)
@@ -92,6 +97,11 @@ class PreferencesWindow:
         self.txtPathFfmpeg.textChanged.connect(self.txtPathFfmpeg_textChanged)
         self.txtPathMagick.textChanged.connect(self.txtPathMagick_textChanged)
         self.txtPathExiftool.textChanged.connect(self.txtPathExiftool_textChanged)
+
+        self.txtImageExt.textChanged.connect(self.txtImageExt_textChanged)
+        self.txtImageRawExt.textChanged.connect(self.txtImageRawExt_textChanged)
+        self.txtVideoExt.textChanged.connect(self.txtVideoExt_textChanged)
+        self.txtVideoRawExt.textChanged.connect(self.txtVideoRawExt_textChanged)
 
         self.cbVideoNvencPreset: QtWidgets.QComboBox = self.window.findChild(QtWidgets.QComboBox, 'cbVideoNvencPreset')
 
@@ -184,6 +194,10 @@ class PreferencesWindow:
         self.txtPathFfmpeg.setText(self.settings.path_ffmpeg)
         self.txtPathMagick.setText(self.settings.path_magick)
         self.txtPathExiftool.setText(self.settings.path_exiftool)
+        self.txtImageExt.setText(self.settings.image_extensions)
+        self.txtImageRawExt.setText(self.settings.image_raw_extensions)
+        self.txtVideoExt.setText(self.settings.video_extensions)
+        self.txtVideoRawExt.setText(self.settings.video_raw_extensions)
 
     def cleanup(self):
         self.__logger.info("Performing cleanup")
@@ -281,3 +295,19 @@ class PreferencesWindow:
             self.__indexDB.save_settings(self.settings)
         except:
             self.txtPathExiftool.setStyleSheet(PreferencesWindow.__QLINEEDIT_INVALID_VALUE_STYLESHEET)
+
+    def txtImageExt_textChanged(self, new_text: str):
+        self.settings.image_extensions = new_text
+        self.__indexDB.save_settings(self.settings)
+
+    def txtImageRawExt_textChanged(self, new_text: str):
+        self.settings.image_raw_extensions = new_text
+        self.__indexDB.save_settings(self.settings)
+
+    def txtVideoExt_textChanged(self, new_text: str):
+        self.settings.video_extensions = new_text
+        self.__indexDB.save_settings(self.settings)
+
+    def txtVideoRawExt_textChanged(self, new_text: str):
+        self.settings.video_raw_extensions = new_text
+        self.__indexDB.save_settings(self.settings)

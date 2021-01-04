@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from logging import Logger
-from types import SimpleNamespace
 from typing import Dict, List
 
 from sqlalchemy import create_engine
@@ -69,7 +68,6 @@ class IndexDB:
 
     def get_settings(self):
         settings_path = MiscUtils.get_settings_path()
-        save_record: bool = False
         settings: Settings = None
 
         if os.path.exists(settings_path) and os.path.isfile(settings_path):
@@ -78,83 +76,13 @@ class IndexDB:
                     settings_dict = json.load(file)
                     settings = Settings()
                     for key in settings_dict:
-                        settings.__dict__[key] = settings_dict[key]
+                        if key in settings.__dict__:  # Don't keep stale keys
+                            settings.__dict__[key] = settings_dict[key]
                 except:
                     logging.exception("Failed to load settings from JSON file. Restoring defaults.")
 
         if settings is None:
             settings = Settings()
-            save_record = True
-
-        # Apply defaults if they are not already set
-        if settings.dirs_to_exclude is None:
-            settings.dirs_to_exclude = '[]'
-            save_record = True
-        if settings.output_dir_path_type is None:
-            settings.output_dir_path_type = "Use Original Paths"
-            save_record = True
-        if settings.unknown_output_dir_path_type is None:
-            settings.unknown_output_dir_path_type = "Use Original Paths"
-            save_record = True
-        if settings.skip_same_name_video is None:
-            settings.skip_same_name_video = True
-            save_record = True
-        if settings.skip_same_name_raw is None:
-            settings.skip_same_name_raw = True
-            save_record = True
-        if settings.convert_unknown is None:
-            settings.convert_unknown = False
-            save_record = True
-        if settings.overwrite_output_files is None:
-            settings.overwrite_output_files = False
-            save_record = True
-        if settings.indexing_workers is None:
-            settings.indexing_workers = MiscUtils.get_default_worker_count()
-            save_record = True
-        if settings.conversion_workers is None:
-            settings.conversion_workers = MiscUtils.get_default_worker_count()
-            save_record = True
-        if settings.gpu_workers is None:
-            settings.gpu_workers = 1
-            save_record = True
-        if settings.gpu_count is None:
-            settings.gpu_count = 0
-            save_record = True
-        if settings.image_compression_quality is None:
-            settings.image_compression_quality = 75
-            save_record = True
-        if settings.image_max_dimension is None:
-            settings.image_max_dimension = 1920
-            save_record = True
-        if settings.video_max_dimension is None:
-            settings.video_max_dimension = 1920
-            save_record = True
-        if settings.video_crf is None:
-            settings.video_crf = 28
-            save_record = True
-        if settings.video_nvenc_preset is None:
-            settings.video_nvenc_preset = "fast"
-            save_record = True
-        if settings.video_audio_bitrate is None:
-            settings.video_audio_bitrate = 128
-            save_record = True
-        if settings.path_ffmpeg is None:
-            settings.path_ffmpeg = "/usr/local/bin/ffmpeg" if not MiscUtils.is_platform_win() else "ffmpeg"
-            save_record = True
-        if settings.path_magick is None:
-            settings.path_magick = "/usr/local/bin/magick" if not MiscUtils.is_platform_win() else "magick"
-            save_record = True
-        if settings.path_exiftool is None:
-            settings.path_exiftool = "/usr/local/bin/exiftool" if not MiscUtils.is_platform_win() else "exiftool"
-            save_record = True
-        if settings.auto_update_check is None:
-            settings.auto_update_check = True
-            save_record = True
-        if settings.auto_show_log_window is None:
-            settings.auto_show_log_window = True
-            save_record = True
-
-        if save_record:
             self.save_settings(settings)
 
         return settings

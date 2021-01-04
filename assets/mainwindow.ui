@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>990</width>
-    <height>630</height>
+    <height>794</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -714,7 +714,7 @@
     <property name="geometry">
      <rect>
       <x>840</x>
-      <y>590</y>
+      <y>760</y>
       <width>141</width>
       <height>32</height>
      </rect>
@@ -792,6 +792,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="maxLength">
+           <number>5000</number>
+          </property>
          </widget>
         </item>
        </layout>
@@ -824,6 +827,9 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="maxLength">
+           <number>5000</number>
           </property>
          </widget>
         </item>
@@ -874,6 +880,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="maxLength">
+           <number>5000</number>
+          </property>
          </widget>
         </item>
         <item>
@@ -893,6 +902,117 @@
          </spacer>
         </item>
        </layout>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_10">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>590</y>
+      <width>971</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string/>
+    </property>
+    <widget class="QLabel" name="Dirs_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>291</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Safelisted File Type Extensions</string>
+     </property>
+    </widget>
+    <widget class="QWidget" name="gridLayoutWidget_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>951</width>
+       <height>116</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_15">
+        <property name="text">
+         <string>Raw Videos</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="txtVideoExt">
+        <property name="maxLength">
+         <number>5000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="txtImageExt">
+        <property name="maxLength">
+         <number>5000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>Regular Images</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="txtVideoRawExt">
+        <property name="maxLength">
+         <number>5000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_16">
+        <property name="text">
+         <string>Regular Videos</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_14">
+        <property name="text">
+         <string>Raw Images</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="txtImageRawExt">
+        <property name="maxLength">
+         <number>5000</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

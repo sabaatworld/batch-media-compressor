@@ -1,6 +1,9 @@
 import hashlib
+import multiprocessing
+import sys
 from datetime import datetime
 from enum import Enum
+from typing import Set
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 
@@ -8,24 +11,19 @@ from pie.common import DB_BASE
 
 
 class ScannedFileType(Enum):
-    __IMAGE_EXTENSIONS__ = ["JPEG", "JPG", "TIF", "TIFF", "PNG", "BMP", "HEIC"]
-    __RAW_IMAGE_EXTENSIONS__ = ["CR2", "DNG"]
-    __VIDEO_EXTENSIONS__ = ["MOV", "MP4", "M4V", "3G2", "3GP", "AVI", "MTS", "MPG", "MPEG"]
-    __RAW_VIDEO_EXTENSIONS__ = []
-
     IMAGE = 1
     VIDEO = 2
     UNKNOWN = 3
 
     @staticmethod
-    def get_type(extension):
-        if extension in ScannedFileType.__IMAGE_EXTENSIONS__:
+    def get_type(image_extensions: Set[str], image_raw_extensions: Set[str], video_extensions: Set[str], video_raw_extensions: Set[str], file_extension: str):
+        if file_extension in image_extensions:
             return (ScannedFileType.IMAGE, False)
-        elif extension in ScannedFileType.__RAW_IMAGE_EXTENSIONS__:
+        elif file_extension in image_raw_extensions:
             return (ScannedFileType.IMAGE, True)
-        elif extension in ScannedFileType.__VIDEO_EXTENSIONS__:
+        elif file_extension in video_extensions:
             return (ScannedFileType.VIDEO, False)
-        elif extension in ScannedFileType.__RAW_VIDEO_EXTENSIONS__:
+        elif file_extension in video_raw_extensions:
             return (ScannedFileType.VIDEO, True)
         else:
             return (ScannedFileType.UNKNOWN, False)
@@ -82,30 +80,45 @@ class Settings:
 
     def __init__(self) -> None:
         self.monitored_dir: str = None
-        self.dirs_to_exclude: str = None
+        self.dirs_to_exclude: str = '[]'
         self.output_dir: str = None
         self.unknown_output_dir: str = None
-        self.output_dir_path_type: str = None
-        self.unknown_output_dir_path_type: str = None
-        self.skip_same_name_video: bool = None
-        self.skip_same_name_raw: bool = None
-        self.convert_unknown: bool = None
-        self.overwrite_output_files: bool = None
-        self.indexing_workers: int = None
-        self.conversion_workers: int = None
-        self.gpu_workers: int = None
-        self.gpu_count: int = None
-        self.image_compression_quality: int = None
-        self.image_max_dimension: int = None
-        self.video_max_dimension: int = None
-        self.video_crf: int = None
-        self.video_nvenc_preset: str = None
-        self.video_audio_bitrate: int = None
-        self.path_ffmpeg: str = None
-        self.path_magick: str = None
-        self.path_exiftool: str = None
-        self.auto_update_check: bool = None
-        self.auto_show_log_window: bool = None
+        self.output_dir_path_type: str = "Use Original Paths"
+        self.unknown_output_dir_path_type: str = "Use Original Paths"
+        self.skip_same_name_video: bool = True
+        self.skip_same_name_raw: bool = True
+        self.convert_unknown: bool = False
+        self.overwrite_output_files: bool = False
+        self.indexing_workers: int = Settings.get_default_worker_count()
+        self.conversion_workers: int = Settings.get_default_worker_count()
+        self.gpu_workers: int = 1
+        self.gpu_count: int = 0
+        self.image_compression_quality: int = 75
+        self.image_max_dimension: int = 1920
+        self.video_max_dimension: int = 1920
+        self.video_crf: int = 28
+        self.video_nvenc_preset: str = "fast"
+        self.video_audio_bitrate: int = 128
+        self.path_ffmpeg: str = "/usr/local/bin/ffmpeg" if not Settings.is_platform_win() else "ffmpeg"
+        self.path_magick: str = "/usr/local/bin/magick" if not Settings.is_platform_win() else "magick"
+        self.path_exiftool: str = "/usr/local/bin/exiftool" if not Settings.is_platform_win() else "exiftool"
+        self.auto_update_check: bool = True
+        self.auto_show_log_window: bool = True
+        self.image_extensions: str = "JPEG, JPG, TIF, TIFF, PNG, BMP, HEIC"
+        self.image_raw_extensions: str = "CRW, CR2, CR3, NRW, NEF, ARW, SRF, SR2, DNG"
+        self.video_extensions: str = "MOV, MP4, M4V, 3G2, 3GP, AVI, MTS, MPG, MPEG"
+        self.video_raw_extensions: str = ""
+
+    @staticmethod
+    def is_platform_win() -> bool:
+        return sys.platform == 'win32' or sys.platform == 'cygwin'
+
+    @staticmethod
+    def get_default_worker_count() -> int:
+        try:
+            return multiprocessing.cpu_count()
+        except:
+            return 1
 
     def generate_image_settings_hash(self):
         settings_hash = hashlib.sha1()
