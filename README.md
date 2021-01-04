@@ -4,13 +4,15 @@
 <a href="https://github.com/sabaatworld/batch-media-compressor/releases"><img src="https://img.shields.io/github/downloads/sabaatworld/batch-media-compressor/total?color=ffa500"/></a>
 </p>
 
-# Introduction
+# Batch Media Compressor
+
+## Introduction
 
 Simple application to convert and compress all of your images and videos so that you can store them on mobile device and access them anywhere. It support a large variety or image and video formats (including RAW image formats). This application will compress all images to JPG and videos to MP4 (HEVC) accoring to the configured settings.
 
 If you're like me and value the privacy of your personal images or videos (or maybe you just don't want to pay for services like Google Photos & Amazon Photos), but still want the benifits of being able to revisit you memories on your portable devices, the this app is sure to help. The aim of this project is to compress the entire image / video library to a small enough size that can by synced over to your phone or other porable devices. I shrunk down my 385GB image and video library to 27GB; which I put on my phone storage.
 
-# Getting Started
+## Getting Started
 
 Its super easy to get started:
 
@@ -24,7 +26,7 @@ Its super easy to get started:
 
 ![application window](screenshots/app_window.png)
 
-## Multithreading (Maximizing Conversion Speed)
+### Multithreading (Maximizing Conversion Speed)
 
 Make sure that you have "worker" count is equal to the number of logical CPU cores.
 
@@ -32,19 +34,19 @@ If you want to offload video conversion to your **Nvidia GPU**, you will need to
 
 Once you have ffmpeg setup, crank up the GPU count and workers to indicate that you want to convert videos using your GPU. I've tested parallel conversion on 2 X Nvidia GTX 1080 GPUs on my Windows 10 machine and they really accelerate the video conversion. Note that consumer GPUs like these only support a limited number of conversions in parallel so conversion will actually fail if you want to have more than one worker per GPU. To remove this restriction, apply this [nvidia-patch](https://github.com/keylase/nvidia-patch).
 
-## Syncing Media to Portables
+### Syncing Media to Portables
 
-### Android
+#### Android
 
 Although you could just copy over the compressed / converted files to your portable device, the best option is to setup [Syncthing](https://syncthing.net/) to automatially sync the converted files to your "DCIM" directory on your portable devices. This works on LAN as well over the internet.
 
-### iOS
+#### iOS
 
 Use iTunes to sync photos and videos from the output directory. Note that for some reason iTunes needs more space on the device than the actual size of the compressed media. In the near future, I'll release an app to make things easier for iOS users.
 
-# Developer Instructions
+## Developer Instructions
 
-## VSCode Setup Instructions
+### VSCode Setup Instructions
 
 1. Setup VSCode with Python extension (Tested with Python: 3.7.5)
 1. Download python3 for Win. Do “brew install python3” for Mac.
@@ -83,19 +85,19 @@ Use iTunes to sync photos and videos from the output directory. Note that for so
 1. Install **ffmpeg** (Tested with 4.2.1) - <https://www.ffmpeg.org/download.html>. Make sure `ffmpeg` is on PATH.
 1. Install **Qt Creator** (Tested with 5.12.x) if you want to change the UI - <https://www.qt.io/offline-installers>.
 
-## Running the App
+### Running the App
 
 Simply launch ApplicationWindow.py in VSCode to start the application. This should pop up the main application window.
 
-## Building Binary
+### Building Binary
 
-### OSX
+#### OSX
 
 ```
 ./packaging/build_osx.sh
 ```
 
-### Windows
+#### Windows
 
 ```
  .\packaging\build_win.bat <PATH_TO_PFX_FILE>
