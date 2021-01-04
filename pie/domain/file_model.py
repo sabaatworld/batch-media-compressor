@@ -105,6 +105,7 @@ class Settings:
         self.path_magick: str = None
         self.path_exiftool: str = None
         self.auto_update_check: bool = None
+        self.auto_show_log_window: bool = None
 
     def generate_image_settings_hash(self):
         settings_hash = hashlib.sha1()

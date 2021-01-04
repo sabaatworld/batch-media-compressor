@@ -77,10 +77,11 @@ class IndexDB:
                 try:
                     settings_dict = json.load(file)
                     settings = Settings()
-                    settings.__dict__ = settings_dict
+                    for key in settings_dict:
+                        settings.__dict__[key] = settings_dict[key]
                 except:
                     logging.exception("Failed to load settings from JSON file. Restoring defaults.")
-       
+
         if settings is None:
             settings = Settings()
             save_record = True
@@ -148,6 +149,9 @@ class IndexDB:
             save_record = True
         if settings.auto_update_check is None:
             settings.auto_update_check = True
+            save_record = True
+        if settings.auto_show_log_window is None:
+            settings.auto_show_log_window = True
             save_record = True
 
         if save_record:

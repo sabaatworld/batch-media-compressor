@@ -61,7 +61,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         pass
 
     def startIndexAction_triggered(self):
-        self.show_view_logs_window()
+        if self.indexDB.get_settings().auto_show_log_window:
+            self.show_view_logs_window()
         self.background_processing_started()
         self.indexing_stop_event = Event()
         self.indexing_worker = QWorker(self.start_indexing)

@@ -700,6 +700,13 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="chkAutoShowLogWindow">
+        <property name="text">
+         <string>Automatically Open Logs Window</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </widget>
