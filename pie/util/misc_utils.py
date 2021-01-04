@@ -37,6 +37,10 @@ class MiscUtils:
         return os.path.join(MiscUtils.get_app_data_dir(), "logs")
 
     @staticmethod
+    def get_settings_path():
+        return os.path.join(MiscUtils.get_app_data_dir(), "settings.json")
+
+    @staticmethod
     def configure_logging():
         log_file_dir = MiscUtils.get_log_dir_path()
         os.makedirs(log_file_dir, exist_ok=True)

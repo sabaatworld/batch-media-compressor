@@ -78,48 +78,47 @@ class MediaFile(DB_BASE):
     output_rel_file_path = Column(String)
 
 
-class Settings(DB_BASE):
-    __tablename__ = 'settings'
-    id: str = Column(String, primary_key=True)
-    monitored_dir: str = Column(String)
-    dirs_to_exclude: str = Column(String)
-    output_dir: str = Column(String)
-    unknown_output_dir: str = Column(String)
-    output_dir_path_type: str = Column(String)
-    unknown_output_dir_path_type: str = Column(String)
-    app_data_dir: str = Column(String)
-    skip_same_name_video: bool = Column(Boolean)
-    skip_same_name_raw: bool = Column(Boolean)
-    convert_unknown: bool = Column(Boolean)
-    overwrite_output_files: bool = Column(Boolean)
-    indexing_workers: int = Column(Integer)
-    conversion_workers: int = Column(Integer)
-    gpu_workers: int = Column(Integer)
-    gpu_count: int = Column(Integer)
-    image_compression_quality: int = Column(Integer)
-    image_max_dimension: int = Column(Integer)
-    video_max_dimension: int = Column(Integer)
-    video_crf: int = Column(Integer)
-    video_nvenc_preset: str = Column(String)
-    video_audio_bitrate: int = Column(Integer)
-    path_ffmpeg: str = Column(String)
-    path_magick: str = Column(String)
-    path_exiftool: str = Column(String)
-    auto_update_check: bool = Column(Boolean)
+class Settings:
+
+    def __init__(self) -> None:
+        self.monitored_dir: str = None
+        self.dirs_to_exclude: str = None
+        self.output_dir: str = None
+        self.unknown_output_dir: str = None
+        self.output_dir_path_type: str = None
+        self.unknown_output_dir_path_type: str = None
+        self.skip_same_name_video: bool = None
+        self.skip_same_name_raw: bool = None
+        self.convert_unknown: bool = None
+        self.overwrite_output_files: bool = None
+        self.indexing_workers: int = None
+        self.conversion_workers: int = None
+        self.gpu_workers: int = None
+        self.gpu_count: int = None
+        self.image_compression_quality: int = None
+        self.image_max_dimension: int = None
+        self.video_max_dimension: int = None
+        self.video_crf: int = None
+        self.video_nvenc_preset: str = None
+        self.video_audio_bitrate: int = None
+        self.path_ffmpeg: str = None
+        self.path_magick: str = None
+        self.path_exiftool: str = None
+        self.auto_update_check: bool = None
 
     def generate_image_settings_hash(self):
-        hash = hashlib.sha1()
-        hash.update(self.image_compression_quality.to_bytes(64, byteorder='big'))
-        hash.update(self.image_max_dimension.to_bytes(64, byteorder='big'))
-        return hash.hexdigest()
+        settings_hash = hashlib.sha1()
+        settings_hash.update(self.image_compression_quality.to_bytes(64, byteorder='big'))
+        settings_hash.update(self.image_max_dimension.to_bytes(64, byteorder='big'))
+        return settings_hash.hexdigest()
 
     def generate_video_settings_hash(self):
-        hash = hashlib.sha1()
-        hash.update(self.video_max_dimension.to_bytes(64, byteorder='big'))
-        hash.update(self.video_crf.to_bytes(64, byteorder='big'))
-        hash.update(str.encode(self.video_nvenc_preset))
-        hash.update(self.video_audio_bitrate.to_bytes(64, byteorder='big'))
-        return hash.hexdigest()
+        settings_hash = hashlib.sha1()
+        settings_hash.update(self.video_max_dimension.to_bytes(64, byteorder='big'))
+        settings_hash.update(self.video_crf.to_bytes(64, byteorder='big'))
+        settings_hash.update(str.encode(self.video_nvenc_preset))
+        settings_hash.update(self.video_audio_bitrate.to_bytes(64, byteorder='big'))
+        return settings_hash.hexdigest()
 
 
 class IndexingTask:

@@ -1,6 +1,8 @@
+import json
 import logging
 import os
 from logging import Logger
+from types import SimpleNamespace
 from typing import Dict, List
 
 from sqlalchemy import create_engine
@@ -66,11 +68,21 @@ class IndexDB:
         return media_files_by_path
 
     def get_settings(self):
-        session = self.__session
-        save_record = False
-        settings = session.query(Settings).filter_by(id='app_settings').first()
-        if not settings:
-            settings = Settings(id='app_settings')
+        settings_path = MiscUtils.get_settings_path()
+        save_record: bool = False
+        settings: Settings = None
+
+        if os.path.exists(settings_path) and os.path.isfile(settings_path):
+            with open(settings_path) as file:
+                try:
+                    settings_dict = json.load(file)
+                    settings = Settings()
+                    settings.__dict__ = settings_dict
+                except:
+                    logging.exception("Failed to load settings from JSON file. Restoring defaults.")
+       
+        if settings is None:
+            settings = Settings()
             save_record = True
 
         # Apply defaults if they are not already set
@@ -139,15 +151,15 @@ class IndexDB:
             save_record = True
 
         if save_record:
-            session.add(settings)
-            session.commit()
+            self.save_settings(settings)
 
         return settings
 
     def save_settings(self, settings: Settings):
-        session = self.__session
-        session.add(settings)
-        session.commit()
+        settings_path = MiscUtils.get_settings_path()
+        with open(settings_path, 'w') as file:
+            data = settings.__dict__
+            json.dump(data, file, sort_keys=True, indent=4)
 
     def clear_settings(self):
         session = self.__session

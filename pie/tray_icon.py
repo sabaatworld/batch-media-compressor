@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import ssl
 import webbrowser
 from multiprocessing import Event, Queue
@@ -170,19 +171,41 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         with IndexDB() as indexDB:
             indexing_task = IndexingTask()
             indexing_task.settings = indexDB.get_settings()
-            misc_utils = MiscUtils(indexing_task)
-            misc_utils.create_root_marker()
-            indexing_helper = IndexingHelper(indexing_task, self.log_queue, self.indexing_stop_event)
-            (scanned_files, _) = indexing_helper.scan_dirs()
-            indexing_helper.remove_slate_files(indexDB, scanned_files)
-            indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
-            if not self.indexing_stop_event.is_set():
-                indexing_helper.create_media_files(scanned_files)
-            if not self.indexing_stop_event.is_set():
-                media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
-                media_processor.save_processed_files(indexDB)
-            if not self.indexing_stop_event.is_set():
-                misc_utils.cleanEmptyOutputDirs()
+            if self.settings_valid(indexing_task.settings):
+                misc_utils = MiscUtils(indexing_task)
+                misc_utils.create_root_marker()
+                indexing_helper = IndexingHelper(indexing_task, self.log_queue, self.indexing_stop_event)
+                (scanned_files, _) = indexing_helper.scan_dirs()
+                indexing_helper.remove_slate_files(indexDB, scanned_files)
+                indexing_helper.lookup_already_indexed_files(indexDB, scanned_files)
+                if not self.indexing_stop_event.is_set():
+                    indexing_helper.create_media_files(scanned_files)
+                if not self.indexing_stop_event.is_set():
+                    media_processor = MediaProcessor(indexing_task, self.log_queue, self.indexing_stop_event)
+                    media_processor.save_processed_files(indexDB)
+                if not self.indexing_stop_event.is_set():
+                    misc_utils.cleanEmptyOutputDirs()
+
+    def settings_valid(self, settings: Settings) -> bool:
+        error_msg: str = None
+        if settings.monitored_dir is None:
+            error_msg = "Directory to scan not configured"
+        elif not os.path.isdir(settings.monitored_dir):
+            error_msg = "Directory to scan is invalid"
+        elif settings.output_dir is None:
+            error_msg = "Media with Capture Date directory not configured"
+        elif not os.path.isdir(settings.output_dir):
+            error_msg = "Media with Capture Date directory is invalid"
+        elif settings.unknown_output_dir is None:
+            error_msg = "Media without Capture Date directory not configured"
+        elif not os.path.isdir(settings.unknown_output_dir):
+            error_msg = "Media without Capture Date directory is invalid"
+
+        if error_msg is not None:
+            self.__logger.error("Cannot start processing: %s. Please update preferences and try again.", error_msg)
+            return False
+        else:
+            return True
 
     def background_processing_started(self):
         self.startIndexAction.setEnabled(False)
