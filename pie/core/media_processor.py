@@ -100,7 +100,7 @@ class MediaProcessor:
                     MediaProcessor.convert_image_file(settings, media_file, original_file_path, save_file_path)
                 if ScannedFileType.VIDEO.name == media_file.file_type:
                     MediaProcessor.convert_video_file(settings, media_file, original_file_path, save_file_path, target_gpu)
-                MediaProcessor.copy_exif_to_file(settings, original_file_path, save_file_path, media_file.video_rotation)
+                MediaProcessor.copy_exif_to_file(settings, original_file_path, save_file_path, media_file)
                 media_file.converted_file_hash = MiscUtils.generate_hash(save_file_path)
                 media_file.conversion_settings_hash = conversion_settings_hash
                 with save_file_path_computation_lock:
@@ -147,10 +147,13 @@ class MediaProcessor:
         MiscUtils.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod
-    def copy_exif_to_file(settings: Settings, original_file_path: str, new_file_path: str, rotation: str):
+    def copy_exif_to_file(settings: Settings, original_file_path: str, new_file_path: str, media_file: MediaFile):
         args = [settings.path_exiftool, "-overwrite_original", "-tagsFromFile", original_file_path, new_file_path]
-        if rotation:
-            args.insert(4, "-rotation={}".format(rotation))
+        if ScannedFileType.VIDEO.name == media_file.file_type and media_file.video_rotation:
+            args.insert(4, "-rotation={}".format(media_file.video_rotation))
+        if ScannedFileType.IMAGE.name == media_file.file_type and media_file.extension in ["HEIC", "HEIF"]:
+            args.insert(4, "-x")
+            args.insert(5, "Orientation")
         MiscUtils.exec_subprocess(args, "EXIF copy failed")
 
     @staticmethod

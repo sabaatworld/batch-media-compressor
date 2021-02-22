@@ -39,8 +39,8 @@ app = BUNDLE(exe,
              info_plist={
                 'LSUIElement': True,
                 'CFBundleDisplayName': 'Batch Media Compressor',
-                'CFBundleShortVersionString': '1.0.0',
-                'CFBundleVersion': '1.0.0',
+                'CFBundleShortVersionString': '1.0.1',
+                'CFBundleVersion': '1.0.1',
                 'NSHumanReadableCopyright': 'Copyright © 2020 Two Hand Apps. All rights reserved.',
                 'LSApplicationCategoryType': 'public.app-category.photography',
                 'NSRequiresAquaSystemAppearance': True # TODO: Support dark mode 

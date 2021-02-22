@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Batch Media Compressor"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Two Hand Apps"
 #define MyAppURL "https://github.com/sabaatworld/batch-media-compressor"
 #define MyAppExeName "Batch Media Compressor.exe"
