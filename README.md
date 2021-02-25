@@ -1,7 +1,6 @@
 <p>
 <a href="https://github.com/sabaatworld/batch-media-compressor/releases"><img src="https://img.shields.io/github/v/release/sabaatworld/batch-media-compressor?include_prereleases"/></a>
 <a href="https://github.com/sabaatworld/batch-media-compressor/releases"><img src="https://img.shields.io/github/release-date/sabaatworld/batch-media-compressor"/></a>
-<a href="https://github.com/sabaatworld/batch-media-compressor/releases"><img src="https://img.shields.io/github/downloads/sabaatworld/batch-media-compressor/total?color=ffa500"/></a>
 </p>
 
 # Batch Media Compressor
@@ -20,7 +19,7 @@ Its super easy to get started:
     * On OSX, you need to additionally install **dcraw** and **ufraw** to support RAW image formats. On Windows, these are included with Image Magick.
     * It's easiest if you add there tools to you PATH environment variable so that Batch Media Compressor can access them without any configuration.
     * If you're unable to or don't want to add these to PATH, then feel free to configure the location of these tools in the **Edit Preferences** window.
-1. Download the latest version of the app from the [releases](releases) page.
+1. Download the latest version of the app from the [releases](https://github.com/sabaatworld/batch-media-compressor/releases) page.
 1. Select directories to scan and output directories using **Right-click on Tray Icon** -> **Edit Preferences**.
 1. Start media compression using **Right-click on Tray Icon** -> **Start Processing**.
 

@@ -120,7 +120,7 @@ class MediaProcessor:
     @staticmethod
     def convert_image_file(settings: Settings, media_file: MediaFile, original_file_path: str, save_file_path: str):
         # Sample: magick convert -resize 320x480 -quality 75 inputFile.cr2 outputfile.jpg
-        args = [settings.path_magick, "convert", "-quality", str(settings.image_compression_quality), original_file_path, save_file_path]
+        args = [settings.path_magick, "convert", "-quality", str(settings.image_compression_quality), "{}[0]".format(original_file_path), save_file_path]
 
         new_dimentions = MediaProcessor.get_new_dimentions(media_file.height, media_file.width, settings.image_max_dimension)
         if new_dimentions:
