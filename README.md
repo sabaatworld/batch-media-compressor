@@ -99,6 +99,11 @@ Simply launch ApplicationWindow.py in VSCode to start the application. This shou
 
 #### Windows
 
+Packaging on windows requires the following:
+
+1. [Windows 10 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
+1. [Inno Setup](https://jrsoftware.org/isdl.php)
+
 ```
  .\packaging\build_win.bat <PATH_TO_PFX_FILE>
 ```
