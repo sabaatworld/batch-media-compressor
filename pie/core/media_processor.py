@@ -110,6 +110,11 @@ class MediaProcessor:
             else:
                 logging.info("Skipped Conversion %s: %s -> %s", task_id, original_file_path, save_file_path)
         except:
+            try:
+                if os.path.exists(save_file_path):
+                    os.remove(save_file_path) # Delete corrupt / invalid output file
+            except:
+                pass
             logging.exception("Failed Processing %s: %s -> %s (%ss)", task_id, original_file_path, save_file_path, round(time.time() - processing_start_time, 2))
 
     @staticmethod
@@ -137,13 +142,14 @@ class MediaProcessor:
                 args.insert(14, "-vf")
                 args.insert(15, "scale={}:{}".format(new_dimentions['width'], new_dimentions['height']))
         else:
-            # GPU Sample: ffmpeg -noautorotate -hwaccel nvdec -hwaccel_device 0 -i input -c:v hevc_nvenc -preset fast -gpu 0 -c:a aac -ac 2 -b:a 128k -tag:v hvc1 -vf "hwupload_cuda,scale_npp=w=1920:h=1080:format=yuv420p" -y output.mp4
-            args = [settings.path_ffmpeg, "-noautorotate", "-hwaccel", "nvdec", "-hwaccel_device", str(target_gpu), "-i", original_file_path,
-                    "-c:v", "hevc_nvenc", "-preset", settings.video_nvenc_preset, "-gpu", str(target_gpu),
-                    "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg, "-tag:v", "hvc1", "-y", new_file_path]
+            # GPU Sample: ffmpeg -noautorotate -vsync 0 -hwaccel cuda -hwaccel_device 0 -hwaccel_output_format cuda -i input -c:v hevc_nvenc -preset medium -rc vbr -cq 38 -gpu 0 -c:a aac -ac 2 -b:a 128k -tag:v hvc1 -vf scale_cuda=2560:1440 -y output.mp4
+            args = [settings.path_ffmpeg, "-noautorotate", "-vsync", "0", "-hwaccel", "cuda", "-hwaccel_device", str(target_gpu),
+                    "-hwaccel_output_format", "cuda", "-i", original_file_path, "-c:v", "hevc_nvenc", "-preset", settings.video_nvenc_preset,
+                    "-rc", "vbr", "-cq", str(settings.video_crf), "-gpu", str(target_gpu), "-c:a", "aac", "-ac", "2", "-b:a", audio_bitrate_arg,
+                    "-tag:v", "hvc1", "-y", new_file_path]
             if new_dimentions:
-                args.insert(22, "-vf")
-                args.insert(23, "hwupload_cuda,scale_npp=w={}:h={}:format=yuv420p".format(new_dimentions['width'], new_dimentions['height']))
+                args.insert(30, "-vf")
+                args.insert(31, "scale_cuda={}:{}".format(new_dimentions['width'], new_dimentions['height']))
         MiscUtils.exec_subprocess(args, "Video conversion failed")
 
     @staticmethod

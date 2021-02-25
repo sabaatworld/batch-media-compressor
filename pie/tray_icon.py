@@ -18,7 +18,7 @@ from pie.util import MiscUtils, QWorker
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
-    __APP_VER = "1.0.1"
+    __APP_VER = "1.0.2"
     __logger = logging.getLogger('TrayIcon')
 
     def __init__(self, log_queue: Queue):

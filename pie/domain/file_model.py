@@ -128,6 +128,7 @@ class Settings:
 
     def generate_video_settings_hash(self):
         settings_hash = hashlib.sha1()
+        settings_hash.update((self.gpu_count > 0).to_bytes(64, byteorder='big'))
         settings_hash.update(self.video_max_dimension.to_bytes(64, byteorder='big'))
         settings_hash.update(self.video_crf.to_bytes(64, byteorder='big'))
         settings_hash.update(str.encode(self.video_nvenc_preset))
