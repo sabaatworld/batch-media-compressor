@@ -12,5 +12,5 @@
     "python.formatting.autopep8Args": [
         "--max-line-length=300"
     ],
-    "python.pythonPath": ".venv/bin/python",
+    "python.pythonPath": ".venv/bin/python3.9",
 }
