@@ -9,7 +9,7 @@ sqlalchemy==1.4.9
 appdirs==1.4.4
 zc.lockfile==2.0
 packaging==20.9
-certifi==2020.12.5
+certifi==2022.12.7
 
 # Packaging
 pyinstaller==4.3
