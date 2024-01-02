@@ -86,7 +86,7 @@ Use iTunes to sync photos and videos from the output directory. Note that for so
 
 ### Running the App
 
-Simply launch ApplicationWindow.py in VSCode to start the application. This should pop up the main application window.
+Simply launch `main.py` in VSCode to start the application. This should pop up the main application window.
 
 ### Building Binary
 
