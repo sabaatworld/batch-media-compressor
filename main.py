@@ -1,10 +1,11 @@
 import logging
 import multiprocessing
+import os
 import sys
 import threading
 from multiprocessing import Manager, freeze_support
 
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from zc.lockfile import LockError, LockFile
 
 from pie import TrayIcon
@@ -17,6 +18,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn')
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     QtGui.QGuiApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    # os.environ["PYSIDE_DESIGNER_PLUGINS"] = "."
 
     MiscUtils.configure_logging()
     log_queue = Manager().Queue()
@@ -32,7 +34,7 @@ if __name__ == "__main__":
         lock = LockFile(MiscUtils.get_lock_file_path())
         tray_icon = TrayIcon(log_queue)
         tray_icon.show()
-        return_code = app.exec_()
+        return_code = app.exec()
         tray_icon.cleanup()
         lock.close()
     except LockError:
@@ -40,7 +42,7 @@ if __name__ == "__main__":
         logging.fatal(error_msg)
         QtWidgets.QMessageBox.critical(None, "Fatal Error", error_msg, QtWidgets.QMessageBox.Ok)
         return_code = -1
-    
+
     logging.info("Application is being shutdown")
     log_queue.put(None)
     logging.debug("Waiting for logging thread to terminate")

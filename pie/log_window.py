@@ -4,7 +4,7 @@ import webbrowser
 from logging.handlers import QueueHandler
 from queue import Queue
 
-from PySide2 import QtCore, QtUiTools, QtWidgets
+from PySide6 import QtCore, QtUiTools, QtWidgets
 
 from pie.util import MiscUtils, QWorker
 

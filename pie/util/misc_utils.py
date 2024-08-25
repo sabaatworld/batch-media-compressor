@@ -52,6 +52,8 @@ class MiscUtils:
         rolling_file_handler.setLevel(logging.DEBUG)
         rolling_file_handler.setFormatter(formatter)
         root_logger = logging.getLogger()
+        for handler in root_logger.handlers:
+            root_logger.removeHandler(handler) # Removing default handlers
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(console_handler)
         root_logger.addHandler(rolling_file_handler)
@@ -145,7 +147,7 @@ class MiscUtils:
     def generate_hash(file_path: str) -> str:
         with open(file_path, "rb") as file:
             file_hash = hashlib.sha1()
-            while chunk := file.read(1048576): # 1MB in bytes
+            while chunk := file.read(1048576):  # 1MB in bytes
                 file_hash.update(chunk)
         return file_hash.hexdigest()
 

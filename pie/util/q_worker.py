@@ -2,7 +2,7 @@ import inspect
 import sys
 import traceback
 
-from PySide2 import QtCore
+from PySide6 import QtCore
 
 
 class QWorkerSignals(QtCore.QObject):

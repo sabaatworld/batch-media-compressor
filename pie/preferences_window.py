@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Callable
 
-from PySide2 import QtCore, QtUiTools, QtWidgets
+from PySide6 import QtCore, QtUiTools, QtWidgets
 
 from pie.core import IndexDB
 from pie.util.misc_utils import MiscUtils

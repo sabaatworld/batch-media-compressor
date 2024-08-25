@@ -7,7 +7,7 @@ from multiprocessing import Event, Queue
 from urllib.request import urlopen
 
 import certifi
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from packaging import version
 from pie.core import IndexDB, IndexingHelper, MediaProcessor

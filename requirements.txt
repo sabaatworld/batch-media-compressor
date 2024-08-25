@@ -3,7 +3,7 @@ pylint==2.7.4
 
 # Dependencies
 python-dateutil==2.8.1
-PySide2==5.15.2
+PySide6==6.1.2
 Send2Trash==1.5.0
 sqlalchemy==1.4.9
 appdirs==1.4.4
